@@ -8,16 +8,17 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 - [ ] **Install Shadcn UI**
 
-  - [ ] Run `npx shadcn@latest init` to set up Shadcn
-  - [ ] Configure Tailwind CSS (already installed)
-  - [ ] Install and configure base components (button, input, card, etc.)
+  - [x] Run `npx shadcn@latest init` to set up Shadcn
+  - [x] Configure Tailwind CSS (already installed)
+  - [ ] Code rabbit setup
+  - [ ] Vercel setup
 
-- [ ] **Install Clerk Authentication**
+- [x] **Install Clerk Authentication**
 
-  - [ ] Run `npm install @clerk/nextjs`
-  - [ ] Set up Clerk environment variables
-  - [ ] Configure Clerk provider in your app
-  - [ ] Set up authentication middleware
+  - [x] Run `npm install @clerk/nextjs`
+  - [x] Set up Clerk environment variables
+  - [x] Configure Clerk provider in your app
+  - [x] Set up authentication middleware
 
 - [ ] **Install Additional Dependencies**
   - [ ] `npm install lucide-react` (for icons)
