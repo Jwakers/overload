@@ -1,5 +1,8 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { getAllMuscleGroups } from "./lib/muscle_groups";
+
+const ALL_MUSCLE_GROUPS = getAllMuscleGroups().map((group) => v.literal(group));
 
 export default defineSchema({
   users: defineTable({
@@ -48,7 +51,7 @@ export default defineSchema({
   exercises: defineTable({
     userId: v.optional(v.id("users")),
     name: v.string(),
-    muscleGroups: v.array(v.string()),
+    muscleGroups: v.array(v.union(...ALL_MUSCLE_GROUPS)),
     isCustom: v.boolean(),
     isActive: v.boolean(),
     createdAt: v.number(),
