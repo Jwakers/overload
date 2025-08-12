@@ -6,7 +6,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 ### Phase 1: Project Setup & Dependencies
 
-- [ ] **Install Shadcn UI**
+- [x] **Install Setup**
 
   - [x] Run `npx shadcn@latest init` to set up Shadcn
   - [x] Configure Tailwind CSS (already installed)
@@ -24,17 +24,26 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 - [ ] **Design Database Tables**
 
-  - [ ] Create `users` table (linked to Clerk user IDs)
-  - [ ] Create `exercises` table (exercise definitions)
-  - [ ] Create `workouts` table (workout sessions)
-  - [ ] Create `sets` table (individual set records)
-  - [ ] Create `progressive_overload` table (tracking progression)
+- [x] Outline schema based on user journey
+- [x] Create `users` table (linked to Clerk user IDs)
+  - [x] Sync clerk user data to the `users` table
+  - [x] Add body weight tracking fields and preferences
+- [x] Create `bodyWeightHistory` table (weight tracking over time)
+- [x] Create `exercises` table (exercise definitions)
+- [x] Create `workoutDays` table (user-defined workout templates)
+- [x] Create `workouts` table (workout sessions)
+- [x] Create `workoutExercises` table (exercises within workouts)
+- [x] Create `exerciseHistory` table (quick access to performance data)
+- [x] Create `predefinedExercises` table (exercise library)
 
 - [ ] **Implement Convex Functions**
   - [ ] User management functions (create, update, delete)
+  - [ ] Body weight tracking functions (record, history, trends)
   - [ ] Exercise CRUD operations
+  - [ ] Workout day template management
   - [ ] Workout tracking functions
   - [ ] Set recording functions
+  - [ ] Exercise history updates and calculations
   - [ ] Progressive overload calculation functions
 
 ### Phase 3: Core Features
@@ -58,12 +67,18 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
   - [ ] Add exercises to workout
   - [ ] Record sets with weight, reps, RPE
   - [ ] Workout history view
+  - [ ] Workout completion flow with summary and notes
+  - [ ] Quick actions (copy last workout, quick start, continue from template)
+  - [ ] Offline data sync for poor connectivity during workouts
+  - [ ] Integrated rest timer between sets with customizable defaults
 
 - [ ] **Progressive Overload Tracking**
   - [ ] Calculate and display progression
   - [ ] Show improvement trends
   - [ ] Set personal records tracking
   - [ ] Progress visualization (charts/graphs)
+  - [ ] Exercise history with configurable time ranges (week, month, 3 months, 6 months, year)
+  - [ ] Long-term progress tracking to identify plateaus
 
 ### Phase 4: UI Components & Pages
 
@@ -83,14 +98,18 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
   - [ ] Workout timer
   - [ ] Set input forms
-  - [ ] Rest timer between sets
-  - [ ] Workout completion flow
+  - [ ] Rest timer between sets with customizable defaults
+  - [ ] Workout completion flow with summary view
+  - [ ] Quick action buttons for common workflows
+  - [ ] Offline indicator and sync status
 
 - [ ] **Data Visualization**
   - [ ] Progress charts (line charts for weight progression)
   - [ ] Volume tracking
   - [ ] Personal records display
   - [ ] Workout frequency calendar
+  - [ ] Exercise history timeline with configurable ranges
+  - [ ] Plateau detection and trend analysis
 
 ### Phase 5: Advanced Features
 
@@ -110,7 +129,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] **Mobile Optimization**
   - [ ] Responsive design for mobile devices
   - [ ] Touch-friendly workout interface
-  - [ ] Offline capability considerations
+  - [ ] Offline capability with local storage and sync
+  - [ ] Progressive Web App (PWA) features for app-like experience
 
 ### Phase 6: Polish & Testing
 
