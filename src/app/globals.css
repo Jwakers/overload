@@ -41,6 +41,24 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  
+  /* Fitness/Brand Semantic Colors */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-muted-foreground: var(--brand-muted-foreground);
+  
+  /* Success/Progress Colors */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-success-muted-foreground: var(--success-muted-foreground);
+  
+  /* Energy/Strength Colors */
+  --color-energy: var(--energy);
+  --color-energy-foreground: var(--energy-foreground);
+  --color-energy-muted: var(--energy-muted);
+  --color-energy-muted-foreground: var(--energy-muted-foreground);
 }
 
 :root {
@@ -76,6 +94,24 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Fitness/Brand Semantic Colors */
+  --brand: oklch(0.5 0.2 250);      /* Primary brand color (blue-purple) */
+  --brand-foreground: oklch(0.98 0 0);
+  --brand-muted: oklch(0.95 0.05 250);
+  --brand-muted-foreground: oklch(0.4 0.1 250);
+  
+  /* Success/Progress Colors */
+  --success: oklch(0.6 0.15 150);   /* Green for progress/success */
+  --success-foreground: oklch(0.98 0 0);
+  --success-muted: oklch(0.95 0.05 150);
+  --success-muted-foreground: oklch(0.4 0.1 150);
+  
+  /* Energy/Strength Colors */
+  --energy: oklch(0.7 0.2 50);      /* Orange/amber for energy/strength */
+  --energy-foreground: oklch(0.98 0 0);
+  --energy-muted: oklch(0.95 0.05 50);
+  --energy-muted-foreground: oklch(0.4 0.1 50);
 }
 
 .dark {
@@ -110,6 +146,22 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  
+  /* Dark mode fitness/brand colors */
+  --brand: oklch(0.6 0.2 250);
+  --brand-foreground: oklch(0.98 0 0);
+  --brand-muted: oklch(0.2 0.05 250);
+  --brand-muted-foreground: oklch(0.7 0.1 250);
+  
+  --success: oklch(0.7 0.15 150);
+  --success-foreground: oklch(0.98 0 0);
+  --success-muted: oklch(0.2 0.05 150);
+  --success-muted-foreground: oklch(0.7 0.1 150);
+  
+  --energy: oklch(0.8 0.2 50);
+  --energy-foreground: oklch(0.98 0 0);
+  --energy-muted: oklch(0.2 0.05 50);
+  --energy-muted-foreground: oklch(0.7 0.1 50);
 }
 
 @layer base {
