@@ -22,7 +22,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 ### Phase 2: Convex Database Schema
 
-- [ ] **Design Database Tables**
+- [x] **Design Database Tables**
 
 - [x] Outline schema based on user journey
 - [x] Create `users` table (linked to Clerk user IDs)
@@ -36,23 +36,12 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Create `exerciseHistory` table (quick access to performance data)
 - [x] Create `predefinedExercises` table (exercise library)
 
-- [ ] **Implement Convex Functions**
-  - [ ] User management functions (create, update, delete)
-  - [ ] Body weight tracking functions (record, history, trends)
-  - [ ] Exercise CRUD operations
-  - [ ] Workout day template management
-  - [ ] Workout tracking functions
-  - [ ] Set recording functions
-  - [ ] Exercise history updates and calculations
-  - [ ] Progressive overload calculation functions
-
 ### Phase 3: Core Features
 
 - [ ] **Authentication System**
 
   - [ ] Implement sign-in/sign-up pages
-  - [ ] Create protected routes
-  - [ ] Set up user profile management
+  - [x] Create protected routes
 
 - [ ] **Exercise Management**
 
@@ -163,6 +152,10 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
   - [ ] Deploy to Vercel/Netlify
   - [ ] Configure custom domain
   - [ ] Set up monitoring and analytics
+
+### Phase 8: Post MVP
+
+- [ ] User profile management
 
 ## 🚀 Recommended Development Order
 
