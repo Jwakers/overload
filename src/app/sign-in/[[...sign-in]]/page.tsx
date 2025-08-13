@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
-import { BarChart3, Dumbbell, TrendingUp } from "lucide-react";
+import { BarChart3, CheckCircle, Dumbbell, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function Page() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-brand/10">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-brand/5 via-brand/10 to-brand/5">
       <AuthLoading>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand mx-auto mb-4" />
@@ -20,23 +20,11 @@ export default function Page() {
       </AuthLoading>
 
       <Unauthenticated>
-        <div className="bg-card rounded-2xl shadow-xl p-8 border border-border animate-in fade-in slide-in-from-bottom-5 duration-500">
+        <div className="bg-card rounded-2xl shadow-xl p-8 border border-border animate-in fade-in slide-in-from-bottom-5 duration-500 max-w-md w-full">
           {/* Logo/Brand Section */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gradient-to-br from-brand to-brand rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <svg
-                className="w-8 h-8 text-brand-foreground"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
+              <TrendingUp className="w-8 h-8 text-brand-foreground" />
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-brand to-brand bg-clip-text text-transparent">
               Overload
@@ -47,22 +35,26 @@ export default function Page() {
           </div>
 
           {/* Sign In Section */}
-          <div className="gap-y-6 flex flex-col items-center">
-            <Button asChild variant="primary" className="min-w-60" size="lg">
-              <SignInButton mode="modal">Sign In</SignInButton>
-            </Button>
+          <div className="space-y-6">
+            <SignInButton mode="modal">
+              <Button variant="default" className="w-full" size="lg">
+                Sign In
+              </Button>
+            </SignInButton>
 
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
                 <span>New to Overload?</span>{" "}
-                <Button asChild variant="link" className="p-0">
-                  <SignUpButton mode="modal">Create an account</SignUpButton>
-                </Button>
+                <SignUpButton mode="modal">
+                  <Button variant="link" className="p-0 h-auto">
+                    Create an account
+                  </Button>
+                </SignUpButton>
               </p>
             </div>
           </div>
 
-          <Separator className="my-8 mx-auto max-w-80" />
+          <Separator className="my-8" />
 
           {/* Features Preview */}
           <div className="grid grid-cols-3 gap-4 text-center">
@@ -91,21 +83,9 @@ export default function Page() {
       </Unauthenticated>
 
       <Authenticated>
-        <div className="bg-card rounded-2xl shadow-xl p-8 border border-border text-center">
+        <div className="bg-card rounded-2xl shadow-xl p-8 border border-border text-center max-w-md w-full">
           <div className="w-16 h-16 bg-gradient-to-br from-success to-success rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <svg
-              className="w-8 h-8 text-success-foreground"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+            <CheckCircle className="w-8 h-8 text-success-foreground" />
           </div>
           <h2 className="text-2xl font-bold text-foreground mb-2">
             Welcome to Overload!
@@ -114,14 +94,9 @@ export default function Page() {
             You&apos;re all set and ready to go!
           </p>
 
-          <div className="space-y-4">
-            <button
-              onClick={() => router.push("/")}
-              className="w-full bg-gradient-to-r from-brand to-brand text-brand-foreground py-3 px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              Go to Dashboard
-            </button>
-          </div>
+          <Button asChild variant="default" className="w-full" size="lg">
+            <button onClick={() => router.push("/")}>Go to Dashboard</button>
+          </Button>
         </div>
       </Authenticated>
     </div>
