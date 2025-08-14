@@ -1,9 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Dumbbell, Home, Plus, Settings } from "lucide-react";
+import { Dumbbell, Home, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { WorkoutDrawer } from "./workout-drawer/workout-drawer";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -49,15 +50,7 @@ export default function Navbar() {
               </Link>
             );
           })}
-          <button
-            className="relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1"
-            title="Log workout"
-            type="button"
-          >
-            <div className="p-4 rounded-full bg-brand text-brand-foreground shadow-lg">
-              <Plus size={24} className={"text-brand-foreground"} />
-            </div>
-          </button>
+          <WorkoutDrawer />
         </div>
       </nav>
     </div>

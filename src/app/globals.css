@@ -175,4 +175,5 @@
 
 @utility container {
   padding-inline: 0.5rem;
+  margin-inline: auto;
 }

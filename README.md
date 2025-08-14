@@ -45,8 +45,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 - [ ] **Exercise Management**
 
-  - [ ] Create exercise library
-  - [ ] Add new exercises form
+  - [x] Create exercise library
+  - [x] Add new exercises form
   - [ ] Exercise search and filtering
   - [ ] Exercise categories (strength, cardio, etc.)
 
@@ -163,6 +163,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 - [ ] User profile management
 - [ ] Exercises synonyms to make search more effective
+- [ ] Start new workout button should say resume if there is an active workout. The drawer can be closed by accident this allows the user to quickly resume what they were doing
 
 ## 🚀 Recommended Development Order
 
