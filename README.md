@@ -162,6 +162,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 ### Phase 8: Post MVP
 
 - [ ] User profile management
+- [ ] Exercises synonyms to make search more effective
 
 ## 🚀 Recommended Development Order
 

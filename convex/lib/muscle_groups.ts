@@ -47,6 +47,7 @@ export const muscleGroups = {
     "abs_rectus",
     "abs_obliques",
     "abs_transverse",
+    "abs_lower",
     "core_lower_back",
     "core_erector_spinae",
     "core_multifidus",
