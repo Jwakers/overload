@@ -38,9 +38,9 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 ### Phase 3: Core Features
 
-- [ ] **Authentication System**
+- [x] **Authentication System**
 
-  - [ ] Implement sign-in/sign-up pages
+  - [x] Implement sign-in/sign-up pages
   - [x] Create protected routes
 
 - [ ] **Exercise Management**
@@ -74,8 +74,14 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] **Layout & Navigation**
 
   - [ ] Create main app layout
-  - [ ] Implement navigation sidebar/menu
+  - [x] Implement navigation menu
   - [ ] Add breadcrumbs and page headers
+
+- [ ] **Home page**
+
+  - [ ] As per base 44 design
+  - [ ] Sections for broad and recent data
+  - [ ] The dashboard can be the home page, as long as it gives options to link out ot further detailed breakdowns
 
 - [ ] **Dashboard**
 
