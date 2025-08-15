@@ -1,7 +1,32 @@
+import { cn } from "@/lib/utils";
 import { DialogClose } from "@radix-ui/react-dialog";
-import { Delete, Plus, PlusCircle, Save } from "lucide-react";
-import { useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import {
+  CheckIcon,
+  Delete,
+  Filter as FilterIcon,
+  Plus,
+  PlusCircle,
+  Save,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
+import {
+  getAllMuscleGroups,
+  MUSCLE_GROUPS,
+} from "../../../convex/lib/muscle_groups";
+import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../ui/command";
 import {
   Dialog,
   DialogContent,
@@ -20,15 +45,39 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "../ui/drawer";
-import { ScrollArea } from "../ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
 export function WorkoutDrawer() {
+  const [open, setOpen] = useState(false);
+  const [workoutSessionId, setWorkoutSessionId] =
+    useState<Id<"workoutSessions"> | null>(null);
+  const createWorkoutSession = useMutation(api.workoutSessions.create);
+  const deleteWorkoutSession = useMutation(
+    api.workoutSessions.deleteWorkoutSession
+  );
   const [selectExerciseDialogOpen, setSelectExerciseDialogOpen] =
     useState(false);
 
+  useEffect(() => {
+    if (workoutSessionId || !open) return;
+    createWorkoutSession().then((id) => setWorkoutSessionId(id));
+  }, [open, createWorkoutSession, workoutSessionId]);
+
+  useEffect(() => {
+    // If there are no exercises on unmounting then delete the workout session
+    return () => {
+      console.log("unmounting", workoutSessionId);
+      if (!workoutSessionId) return;
+      // TODO: Check if there are any exercises on the workout session
+      // deleteWorkoutSession({ id: workoutSessionId });
+    };
+  }, [workoutSessionId, deleteWorkoutSession]);
+
+  console.log("workoutSessionId", workoutSessionId);
+
   return (
     <>
-      <Drawer dismissible={false}>
+      <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
           <button
             className="relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1"
@@ -45,7 +94,12 @@ export function WorkoutDrawer() {
             <DrawerTitle>New Workout</DrawerTitle>
             <DrawerDescription>Description goes here</DrawerDescription>
           </DrawerHeader>
-
+          <div className="container">
+            <p className="my-2 text-sm text-destructive-foreground bg-destructive p-2 px-4 rounded-md">
+              TODO: There needs to be an way to add a split to this without
+              slowing down the flow.
+            </p>
+          </div>
           <div className="container grid gap-2">
             <button
               className="flex justify-between gap-2 rounded border border-dashed p-4"
@@ -58,10 +112,7 @@ export function WorkoutDrawer() {
 
           <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
             <DrawerClose asChild>
-              <Button
-                variant="outline"
-                onClick={() => setSelectExerciseDialogOpen(false)}
-              >
+              <Button variant="outline">
                 <Delete />
                 Cancel
               </Button>
@@ -84,6 +135,34 @@ export function WorkoutDrawer() {
 }
 
 function SelectExerciseDialog(props: { open: boolean; onClose: () => void }) {
+  const exercises = useQuery(api.exercises.getAll);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterValue, setFilterValue] = useState<string>("");
+  const [refinedExercises, setRefinedExercises] =
+    useState<typeof exercises>(exercises);
+
+  useEffect(() => {
+    if (!exercises) return;
+    const filterRefined = exercises.filter((exercise) => {
+      if (!filterValue) return true;
+      return exercise.muscleGroups.some((group) => group.includes(filterValue));
+    });
+
+    const queryRefined = filterRefined.filter((exercise) => {
+      if (!searchTerm.trim()) return true;
+
+      const searchLower = searchTerm.toLowerCase();
+      const nameMatch = exercise.name.toLowerCase().includes(searchLower);
+      const muscleGroupMatch = exercise.muscleGroups.some((group) =>
+        group.toLowerCase().replace(/_/g, " ").includes(searchLower)
+      );
+
+      return nameMatch || muscleGroupMatch;
+    });
+
+    setRefinedExercises(queryRefined);
+  }, [exercises, filterValue, searchTerm]);
+
   return (
     <Dialog open={props.open} onOpenChange={props.onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -93,44 +172,118 @@ function SelectExerciseDialog(props: { open: boolean; onClose: () => void }) {
             Select an exercise to add to your workout.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[calc(100dvh-200px)]">
-          <ul className="grid gap-2 pb-1">
-            <li>
-              <button className="p-4 w-full rounded border flex justify-between items-center gap-2">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">Pull ups</div>
-                  <ul className="flex gap-1 text-xs text-muted-foreground">
-                    <li className="rounded-full bg-muted px-2 py-1">
-                      Lower back
-                    </li>
-                    <li className="rounded-full bg-muted px-2 py-1">
-                      Upper back
-                    </li>
-                    <li className="rounded-full bg-muted px-2 py-1">Core</li>
-                  </ul>
-                </div>
-                <PlusCircle className="text-brand" size={32} />
-              </button>
-            </li>
-            <li>
-              <button className="p-4 w-full rounded border flex justify-between items-center gap-2">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">Bench press</div>
-                  <ul className="flex gap-1 text-xs text-muted-foreground">
-                    <li className="rounded-full bg-muted px-2 py-1">Chest</li>
-                  </ul>
-                </div>
-                <PlusCircle className="text-brand" size={32} />
-              </button>
-            </li>
-          </ul>
-        </ScrollArea>
-        <DialogFooter>
+
+        <div>
+          {filterValue && (
+            <Button asChild onClick={() => setFilterValue("")} size="sm">
+              <Badge>
+                {filterValue} <X size={12} />
+              </Badge>
+            </Button>
+          )}
+        </div>
+
+        <Command>
+          <CommandList className="max-h-[calc(100dvh-270px)]">
+            <CommandEmpty>No exercises found.</CommandEmpty>
+            <CommandGroup>
+              {refinedExercises?.map((exercise) => {
+                return (
+                  <CommandItem key={exercise._id}>
+                    <div className="p-4 w-full rounded border flex justify-between items-center gap-2">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          {exercise.name}
+                        </div>
+                        <ul className="flex flex-wrap gap-1 text-xs text-muted-foreground max-h-14 overflow-hidden">
+                          {exercise.muscleGroups.map((group) => {
+                            const name = group.split("_").join(" ");
+                            return (
+                              <li
+                                className="rounded-full bg-muted px-2 py-1"
+                                key={group}
+                              >
+                                {name}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                      <PlusCircle className="text-brand min-w-6" size={24} />
+                    </div>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+          <CommandInput
+            wrapperClassName="h-14"
+            placeholder="Search exercises..."
+          />
+        </Command>
+        <DialogFooter className="flex flex-row gap-2 justify-between">
           <DialogClose asChild>
             <Button variant="outline">Close</Button>
           </DialogClose>
+          <ExerciseFilter value={filterValue} setValue={setFilterValue} />
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export function ExerciseFilter(props: {
+  value: string;
+  setValue: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const mainGroups = Object.keys(MUSCLE_GROUPS);
+  const allItems = new Set([...mainGroups, ...getAllMuscleGroups()]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          title="Filter exercises"
+        >
+          <FilterIcon />
+          <span>Filter</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0" align="end">
+        <Command>
+          <CommandInput placeholder="Search muscle groups..." />
+          <CommandList>
+            <CommandEmpty>No muscle groups found.</CommandEmpty>
+            <CommandGroup>
+              {Array.from(allItems).map((group) => (
+                <CommandItem
+                  key={group}
+                  value={group}
+                  onSelect={(currentValue) => {
+                    props.setValue(
+                      currentValue === props.value ? "" : currentValue
+                    );
+                    setOpen(false);
+                  }}
+                >
+                  {group.split("_").join(" ")}
+                  <CheckIcon
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      props.value === group ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

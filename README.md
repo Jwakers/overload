@@ -36,6 +36,10 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Create `exerciseHistory` table (quick access to performance data)
 - [x] Create `predefinedExercises` table (exercise library)
 
+### PWA
+
+- [ ] Do necessary PWA setup as per: https://nextjs.org/docs/app/guides/progressive-web-apps
+
 ### Phase 3: Core Features
 
 - [x] **Authentication System**
@@ -91,6 +95,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 - [ ] **Workout Interface**
 
+  - [ ] Create split
+  - [ ] Assign split to workout session
   - [ ] Workout timer
   - [ ] Set input forms
   - [ ] Rest timer between sets with customizable defaults
@@ -164,6 +170,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] User profile management
 - [ ] Exercises synonyms to make search more effective
 - [ ] Start new workout button should say resume if there is an active workout. The drawer can be closed by accident this allows the user to quickly resume what they were doing
+- [ ] When starting a new workout we should query if there are any other workouts created today and if so offer to resume or create a new one.
 
 ## 🚀 Recommended Development Order
 

@@ -1,5 +1,5 @@
 // Simple, flat muscle group structure with clear relationships
-export const muscleGroups = {
+export const MUSCLE_GROUPS = {
   chest: [
     "chest",
     "chest_upper",
@@ -76,13 +76,13 @@ export const muscleGroups = {
     "hip_adductors",
     "hip_rotators",
   ],
-  fullBody: ["full_body", "cardio", "flexibility", "balance", "stability"],
+  full_body: ["full_body", "cardio", "flexibility", "balance", "stability"],
 } as const;
 
 // Type for all muscle group values
 export type MuscleGroup =
-  (typeof muscleGroups)[keyof typeof muscleGroups][number];
+  (typeof MUSCLE_GROUPS)[keyof typeof MUSCLE_GROUPS][number];
 
 // Get all muscle groups as a flat array
 export const getAllMuscleGroups = (): string[] =>
-  Object.values(muscleGroups).flat();
+  Object.values(MUSCLE_GROUPS).flat();
