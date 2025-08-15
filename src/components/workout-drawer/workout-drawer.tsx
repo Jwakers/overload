@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import { DialogClose } from "@radix-ui/react-dialog";
 import { useMutation, useQuery } from "convex/react";
 import {
   CheckIcon,
@@ -10,7 +9,7 @@ import {
   Save,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import {
@@ -28,20 +27,13 @@ import {
   CommandList,
 } from "../ui/command";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
-import {
   Drawer,
   DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
+  DrawerNested,
   DrawerTitle,
   DrawerTrigger,
 } from "../ui/drawer";
@@ -89,7 +81,7 @@ export function WorkoutDrawer() {
             </div>
           </button>
         </DrawerTrigger>
-        <DrawerContent>
+        <DrawerContent className="h-full">
           <DrawerHeader>
             <DrawerTitle>New Workout</DrawerTitle>
             <DrawerDescription>Description goes here</DrawerDescription>
@@ -100,7 +92,7 @@ export function WorkoutDrawer() {
               slowing down the flow.
             </p>
           </div>
-          <div className="container grid gap-2">
+          <div className="container flex flex-col gap-2 h-full justify-end">
             <button
               className="flex justify-between gap-2 rounded border border-dashed p-4"
               onClick={() => setSelectExerciseDialogOpen(true)}
@@ -109,6 +101,11 @@ export function WorkoutDrawer() {
               <PlusCircle className="text-brand" size={24} />
             </button>
           </div>
+
+          <SelectExerciseDrawer
+            open={selectExerciseDialogOpen}
+            onChange={setSelectExerciseDialogOpen}
+          />
 
           <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
             <DrawerClose asChild>
@@ -126,17 +123,15 @@ export function WorkoutDrawer() {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-      <SelectExerciseDialog
-        open={selectExerciseDialogOpen}
-        onClose={() => setSelectExerciseDialogOpen(false)}
-      />
     </>
   );
 }
 
-function SelectExerciseDialog(props: { open: boolean; onClose: () => void }) {
+function SelectExerciseDrawer(props: {
+  open: boolean;
+  onChange: Dispatch<SetStateAction<boolean>>;
+}) {
   const exercises = useQuery(api.exercises.getAll);
-  const [searchTerm, setSearchTerm] = useState("");
   const [filterValue, setFilterValue] = useState<string>("");
   const [refinedExercises, setRefinedExercises] =
     useState<typeof exercises>(exercises);
@@ -148,87 +143,77 @@ function SelectExerciseDialog(props: { open: boolean; onClose: () => void }) {
       return exercise.muscleGroups.some((group) => group.includes(filterValue));
     });
 
-    const queryRefined = filterRefined.filter((exercise) => {
-      if (!searchTerm.trim()) return true;
-
-      const searchLower = searchTerm.toLowerCase();
-      const nameMatch = exercise.name.toLowerCase().includes(searchLower);
-      const muscleGroupMatch = exercise.muscleGroups.some((group) =>
-        group.toLowerCase().replace(/_/g, " ").includes(searchLower)
-      );
-
-      return nameMatch || muscleGroupMatch;
-    });
-
-    setRefinedExercises(queryRefined);
-  }, [exercises, filterValue, searchTerm]);
+    setRefinedExercises(filterRefined);
+  }, [exercises, filterValue]);
 
   return (
-    <Dialog open={props.open} onOpenChange={props.onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Select Exercise</DialogTitle>
-          <DialogDescription>
+    <DrawerNested open={props.open} onOpenChange={props.onChange}>
+      <DrawerContent className="max-h-[94%]">
+        <DrawerHeader>
+          <DrawerTitle>Select Exercise</DrawerTitle>
+          <DrawerDescription>
             Select an exercise to add to your workout.
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
-        <div>
-          {filterValue && (
-            <Button asChild onClick={() => setFilterValue("")} size="sm">
-              <Badge>
-                {filterValue} <X size={12} />
-              </Badge>
-            </Button>
-          )}
+        <div className="px-4 flex-1">
+          <Command>
+            <CommandList className="max-h-[calc(100dvh-260px)]">
+              <CommandEmpty>No exercises found.</CommandEmpty>
+              <CommandGroup>
+                {refinedExercises?.map((exercise) => {
+                  return (
+                    <CommandItem key={exercise._id}>
+                      <div className="p-4 w-full rounded border flex justify-between items-center gap-2">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            {exercise.name}
+                          </div>
+                          <ul className="flex flex-wrap gap-1 text-xs text-muted-foreground max-h-14 overflow-hidden">
+                            {exercise.muscleGroups.map((group) => {
+                              const name = group.split("_").join(" ");
+                              return (
+                                <li
+                                  className="rounded-full bg-muted px-2 py-1"
+                                  key={group}
+                                >
+                                  {name}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                        <PlusCircle className="text-brand min-w-6" size={24} />
+                      </div>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+            <CommandInput
+              wrapperClassName="h-14"
+              placeholder="Search exercises..."
+            />
+          </Command>
         </div>
 
-        <Command>
-          <CommandList className="max-h-[calc(100dvh-270px)]">
-            <CommandEmpty>No exercises found.</CommandEmpty>
-            <CommandGroup>
-              {refinedExercises?.map((exercise) => {
-                return (
-                  <CommandItem key={exercise._id}>
-                    <div className="p-4 w-full rounded border flex justify-between items-center gap-2">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          {exercise.name}
-                        </div>
-                        <ul className="flex flex-wrap gap-1 text-xs text-muted-foreground max-h-14 overflow-hidden">
-                          {exercise.muscleGroups.map((group) => {
-                            const name = group.split("_").join(" ");
-                            return (
-                              <li
-                                className="rounded-full bg-muted px-2 py-1"
-                                key={group}
-                              >
-                                {name}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                      <PlusCircle className="text-brand min-w-6" size={24} />
-                    </div>
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-          <CommandInput
-            wrapperClassName="h-14"
-            placeholder="Search exercises..."
-          />
-        </Command>
-        <DialogFooter className="flex flex-row gap-2 justify-between">
-          <DialogClose asChild>
+        <DrawerFooter className="flex flex-row gap-2 justify-between">
+          <DrawerClose asChild>
             <Button variant="outline">Close</Button>
-          </DialogClose>
-          <ExerciseFilter value={filterValue} setValue={setFilterValue} />
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DrawerClose>
+          <div className="flex items-center gap-2">
+            {filterValue && (
+              <Button asChild onClick={() => setFilterValue("")} size="sm">
+                <Badge>
+                  {filterValue} <X size={12} />
+                </Badge>
+              </Button>
+            )}
+            <ExerciseFilter value={filterValue} setValue={setFilterValue} />
+          </div>
+        </DrawerFooter>
+      </DrawerContent>
+    </DrawerNested>
   );
 }
 

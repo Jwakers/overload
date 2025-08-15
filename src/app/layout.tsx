@@ -36,8 +36,8 @@ export default function RootLayout({
         <ClerkProvider>
           <ConvexClientProvider>
             <div className="relative min-h-screen grid grid-rows-[1fr_auto_auto]">
-              <div vaul-drawer-wrapper="true">{children}</div>
-              <div className="sticky bottom-0 z-50">
+              <div data-vaul-drawer-wrapper="true">{children}</div>
+              <div className="sticky bottom-0">
                 <Navbar />
               </div>
               <Footer />

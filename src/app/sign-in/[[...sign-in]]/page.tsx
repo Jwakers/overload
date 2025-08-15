@@ -2,14 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { ROUTES } from "@/constants";
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 import { BarChart3, CheckCircle, Dumbbell, TrendingUp } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Page() {
-  const router = useRouter();
-
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-brand/5 via-brand/10 to-brand/5">
       <AuthLoading>
@@ -95,7 +94,7 @@ export default function Page() {
           </p>
 
           <Button asChild variant="default" className="w-full" size="lg">
-            <button onClick={() => router.push("/")}>Go to Dashboard</button>
+            <Link href={ROUTES.DASHBOARD}>Go to Dashboard</Link>
           </Button>
         </div>
       </Authenticated>
