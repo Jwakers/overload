@@ -148,7 +148,7 @@ function SelectExerciseDrawer(props: {
 
   return (
     <DrawerNested open={props.open} onOpenChange={props.onChange}>
-      <DrawerContent className="max-h-[94%]">
+      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[94dvh]">
         <DrawerHeader>
           <DrawerTitle>Select Exercise</DrawerTitle>
           <DrawerDescription>

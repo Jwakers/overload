@@ -3,4 +3,5 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
   SIGN_IN: "/sign-in",
   SETTINGS: "/settings",
-};
+  SPLITS: "/splits",
+} as const satisfies Record<string, `/${string}`>;

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/constants";
 import { ArrowRight, BarChart3, Dumbbell, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
@@ -18,7 +19,7 @@ export default function HomePage() {
           </p>
           <div className="mt-10 flex justify-center space-x-4">
             <Button asChild size="lg" className="px-8">
-              <Link href="/sign-in">
+              <Link href={ROUTES.SIGN_IN}>
                 Get Started
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>

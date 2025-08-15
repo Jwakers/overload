@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Settings",
+  description: "App settings and preferences.",
+};
+
 export default function SettingsPage() {
   return (
     <div className="container px-4 py-8">

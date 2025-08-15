@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Splits",
+  description: "Manage your workout splits and training programmes.",
+};
+
 export default function SplitsPage() {
   return (
     <div className="container px-4 py-8">

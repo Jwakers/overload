@@ -6,13 +6,13 @@ export const create = mutation({
   args: {},
   handler: async (ctx) => {
     const user = await getCurrentUserOrThrow(ctx);
-    const workoutSession = await ctx.db.insert("workoutSessions", {
+    const workoutSessionId = await ctx.db.insert("workoutSessions", {
       userId: user._id,
       isActive: true,
       startedAt: Date.now(),
     });
 
-    return workoutSession;
+    return workoutSessionId;
   },
 });
 
