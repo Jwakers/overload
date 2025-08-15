@@ -36,17 +36,21 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Create `exerciseHistory` table (quick access to performance data)
 - [x] Create `predefinedExercises` table (exercise library)
 
+### PWA
+
+- [ ] Do necessary PWA setup as per: https://nextjs.org/docs/app/guides/progressive-web-apps
+
 ### Phase 3: Core Features
 
-- [ ] **Authentication System**
+- [x] **Authentication System**
 
-  - [ ] Implement sign-in/sign-up pages
+  - [x] Implement sign-in/sign-up pages
   - [x] Create protected routes
 
 - [ ] **Exercise Management**
 
-  - [ ] Create exercise library
-  - [ ] Add new exercises form
+  - [x] Create exercise library
+  - [x] Add new exercises form
   - [ ] Exercise search and filtering
   - [ ] Exercise categories (strength, cardio, etc.)
 
@@ -74,8 +78,14 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] **Layout & Navigation**
 
   - [ ] Create main app layout
-  - [ ] Implement navigation sidebar/menu
+  - [x] Implement navigation menu
   - [ ] Add breadcrumbs and page headers
+
+- [ ] **Home page**
+
+  - [ ] As per base 44 design
+  - [ ] Sections for broad and recent data
+  - [ ] The dashboard can be the home page, as long as it gives options to link out ot further detailed breakdowns
 
 - [ ] **Dashboard**
 
@@ -85,6 +95,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 - [ ] **Workout Interface**
 
+  - [ ] Create split
+  - [ ] Assign split to workout session
   - [ ] Workout timer
   - [ ] Set input forms
   - [ ] Rest timer between sets with customizable defaults
@@ -156,6 +168,9 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 ### Phase 8: Post MVP
 
 - [ ] User profile management
+- [ ] Exercises synonyms to make search more effective
+- [ ] Start new workout button should say resume if there is an active workout. The drawer can be closed by accident this allows the user to quickly resume what they were doing
+- [ ] When starting a new workout we should query if there are any other workouts created today and if so offer to resume or create a new one.
 
 ## 🚀 Recommended Development Order
 

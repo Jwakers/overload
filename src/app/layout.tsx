@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import Header from "@/components/header";
+import Footer from "@/components/footer";
+import Navbar from "@/components/navbar";
 import { ClerkProvider } from "@clerk/nextjs";
 import { cx } from "class-variance-authority";
 import ConvexClientProvider from "./convex-client-provider";
@@ -34,19 +35,12 @@ export default function RootLayout({
       >
         <ClerkProvider>
           <ConvexClientProvider>
-            <div className="min-h-screen grid grid-rows-[auto_1fr_auto]">
-              <Header />
-              <div>{children}</div>
-              <footer className="bg-card border-t border-border">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                  <div className="text-center text-muted-foreground">
-                    <p>
-                      &copy; {new Date().getFullYear()} Overload. All rights
-                      reserved.
-                    </p>
-                  </div>
-                </div>
-              </footer>
+            <div className="relative min-h-screen grid grid-rows-[1fr_auto_auto]">
+              <div data-vaul-drawer-wrapper="true">{children}</div>
+              <div className="sticky bottom-0">
+                <Navbar />
+              </div>
+              <Footer />
             </div>
           </ConvexClientProvider>
         </ClerkProvider>
