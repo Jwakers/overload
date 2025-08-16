@@ -52,6 +52,23 @@ export default defineSchema({
     userId: v.optional(v.id("users")),
     name: v.string(),
     muscleGroups: v.array(v.union(...ALL_MUSCLE_GROUPS)),
+    equipment: v.optional(
+      v.union(
+        v.literal("cable"),
+        v.literal("machine"),
+        v.literal("barbell"),
+        v.literal("kettlebell"),
+        v.literal("bodyweight"),
+        v.literal("dumbbell"),
+        v.literal("band"),
+        v.literal("plate"),
+        v.literal("medicine ball"),
+        v.literal("jump rope"),
+        v.literal("resistance band"),
+        v.literal("TRX"),
+        v.literal("other")
+      )
+    ),
     isCustom: v.boolean(),
     isActive: v.boolean(),
     createdAt: v.number(),
@@ -75,9 +92,6 @@ export default defineSchema({
     workoutSessionId: v.id("workoutSessions"),
     exerciseId: v.id("exercises"),
     order: v.number(),
-    weight: v.number(),
-    weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
-    isBodyWeight: v.boolean(),
     sets: v.array(
       v.object({
         reps: v.number(),
@@ -88,7 +102,6 @@ export default defineSchema({
         notes: v.optional(v.string()),
       })
     ),
-    createdAt: v.number(),
   })
     .index("byWorkoutSessionId", ["workoutSessionId"])
     .index("byExerciseId", ["exerciseId"]),

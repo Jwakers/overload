@@ -43,9 +43,18 @@ export function WorkoutDrawer() {
   const [open, setOpen] = useState(false);
   const [workoutSessionId, setWorkoutSessionId] =
     useState<Id<"workoutSessions"> | null>(null);
-  const createWorkoutSession = useMutation(api.workoutSessions.create);
+  const createWorkoutSession = useMutation(api.workoutSessions.getOrCreate);
   const deleteWorkoutSession = useMutation(
     api.workoutSessions.deleteWorkoutSession
+  );
+  const createExerciseSet = useMutation(api.exerciseSets.create);
+  const exerciseSets = useQuery(
+    api.exerciseSets.getSets,
+    workoutSessionId
+      ? {
+          workoutSessionId,
+        }
+      : "skip"
   );
   const [selectExerciseDialogOpen, setSelectExerciseDialogOpen] =
     useState(false);
@@ -65,7 +74,16 @@ export function WorkoutDrawer() {
     };
   }, [workoutSessionId, deleteWorkoutSession]);
 
-  console.log("workoutSessionId", workoutSessionId);
+  const handleSelectExercise = async (exerciseId: Id<"exercises">) => {
+    if (!workoutSessionId) return;
+
+    await createExerciseSet({
+      workoutSessionId,
+      exerciseId,
+      order: 0,
+    });
+    setSelectExerciseDialogOpen(false);
+  };
 
   return (
     <>
@@ -93,9 +111,18 @@ export function WorkoutDrawer() {
             </p>
           </div>
           <div className="container flex flex-col gap-2 h-full justify-end">
+            {exerciseSets?.map((exerciseSet) => (
+              <div className="border p-4" key={exerciseSet._id}>
+                <p className="font-semibold">{exerciseSet.exercise?.name}</p>
+              </div>
+            ))}
             <button
-              className="flex justify-between gap-2 rounded border border-dashed p-4"
+              className={cn(
+                "flex justify-between gap-2 rounded border border-dashed p-4",
+                !workoutSessionId && "opacity-50 cursor-not-allowed"
+              )}
               onClick={() => setSelectExerciseDialogOpen(true)}
+              disabled={!workoutSessionId}
             >
               <p className="font-semibold">Add first exercise</p>
               <PlusCircle className="text-brand" size={24} />
@@ -105,6 +132,7 @@ export function WorkoutDrawer() {
           <SelectExerciseDrawer
             open={selectExerciseDialogOpen}
             onChange={setSelectExerciseDialogOpen}
+            onSelect={handleSelectExercise}
           />
 
           <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
@@ -130,6 +158,7 @@ export function WorkoutDrawer() {
 function SelectExerciseDrawer(props: {
   open: boolean;
   onChange: Dispatch<SetStateAction<boolean>>;
+  onSelect: (exerciseId: Id<"exercises">) => void;
 }) {
   const exercises = useQuery(api.exercises.getAll);
   const [filterValue, setFilterValue] = useState<string>("");
@@ -158,16 +187,27 @@ function SelectExerciseDrawer(props: {
 
         <div className="px-4 flex-1">
           <Command>
-            <CommandList className="max-h-[calc(100dvh-260px)]">
+            <CommandList className="max-h-[calc(100dvh-280px)]">
               <CommandEmpty>No exercises found.</CommandEmpty>
               <CommandGroup>
                 {refinedExercises?.map((exercise) => {
+                  const hasDuplicate = refinedExercises.some(
+                    (e) => e.name === exercise.name && e._id !== exercise._id
+                  );
                   return (
-                    <CommandItem key={exercise._id}>
+                    <CommandItem
+                      key={exercise._id}
+                      onSelect={() => props.onSelect(exercise._id)}
+                    >
                       <div className="p-4 w-full rounded border flex justify-between items-center gap-2">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            {exercise.name}
+                        <div className="space-y-2 w-full">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold">{exercise.name}</p>
+                            {hasDuplicate ? (
+                              <p className="text-xs capitalize text-muted-foreground">
+                                ({exercise.equipment})
+                              </p>
+                            ) : null}
                           </div>
                           <ul className="flex flex-wrap gap-1 text-xs text-muted-foreground max-h-14 overflow-hidden">
                             {exercise.muscleGroups.map((group) => {
@@ -183,7 +223,7 @@ function SelectExerciseDrawer(props: {
                             })}
                           </ul>
                         </div>
-                        <PlusCircle className="text-brand min-w-6" size={24} />
+                        <PlusCircle className="text-brand size-6" />
                       </div>
                     </CommandItem>
                   );
