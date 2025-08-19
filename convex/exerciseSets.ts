@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUserOrThrow } from "./users";
 
@@ -44,5 +45,35 @@ export const getSets = query({
     );
 
     return enrichedSets;
+  },
+});
+
+export const addSet = mutation({
+  args: {
+    exerciseSetId: v.id("exerciseSets"),
+    weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
+    set: v.object({
+      weight: v.number(),
+      reps: v.number(),
+      notes: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const exerciseSet = await ctx.db.get(args.exerciseSetId);
+    if (!exerciseSet) {
+      throw new Error("Exercise set not found");
+    }
+
+    const set: Doc<"exerciseSets">["sets"][number] = {
+      weight: args.set.weight,
+      reps: args.set.reps,
+      notes: args.set.notes,
+      weightUnit: args.weightUnit,
+      isBodyWeight: false,
+    };
+
+    await ctx.db.patch(args.exerciseSetId, {
+      sets: [...exerciseSet.sets, set],
+    });
   },
 });

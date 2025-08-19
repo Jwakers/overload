@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import {
   CheckIcon,
@@ -16,6 +17,8 @@ import {
   useState,
   useTransition,
 } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import {
@@ -43,11 +46,17 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "../ui/drawer";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
 import { Input } from "../ui/input";
-import { Label } from "../ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { ScrollArea } from "../ui/scroll-area";
-import { Separator } from "../ui/separator";
 import { Textarea } from "../ui/textarea";
 
 // TODO: Handle deleting an exercise set
@@ -184,12 +193,7 @@ export function WorkoutDrawer() {
                       <Trash2 className="text-destructive" />
                     </button>
                   </div>
-                  <ExerciseSetForm />
-                  <Separator />
-                  <div className="flex gap-2 justify-between">
-                    <Button variant="outline">Finish exercise</Button>
-                    <Button variant="default">Save and start next set</Button>
-                  </div>
+                  <ExerciseSetForm exerciseSetId={exerciseSet._id} />
                 </div>
               ))}
               <button
@@ -389,46 +393,160 @@ function ExerciseFilter(props: {
   );
 }
 
-function ExerciseSetForm() {
-  // TODO: Submit the form to the exercise set when all fields are filled. Use zod for validation and error handling.
-  // TODO: Pre-populate weight default value with the last exercise set weight. Or the last set weight of the same exercise.
+// Exercise set form schema
+const exerciseSetSchema = z.object({
+  weight: z.string(),
+  reps: z.string(),
+  notes: z
+    .string()
+    .max(255, "Notes must be no more than 255 characters")
+    .optional(),
+});
+
+type ExerciseSetFormData = z.infer<typeof exerciseSetSchema>;
+const DEFAULT_WEIGHT = "lbs";
+
+function ExerciseSetForm(props: { exerciseSetId: Id<"exerciseSets"> }) {
+  // TODO: Show saved sets above the form
+  // TODO: reset values when the form is submitted
+  // TODO: add an is body weight option
+  // TODO: When weight unit changes, convert the current weight value to the new unit
   const user = useQuery(api.users.current);
+  const addSetMutation = useMutation(api.exerciseSets.addSet);
+  const [isPending, startTransition] = useTransition();
+
+  const form = useForm<ExerciseSetFormData>({
+    resolver: zodResolver(exerciseSetSchema),
+    defaultValues: {
+      weight: "", // TODO: Pre-populate weight default value with the last exercise set weight
+      reps: "",
+      notes: "",
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof exerciseSetSchema>) {
+    // Do something with the form values.
+    // ✅ This will be type-safe and validated.
+
+    const weight = Number(values.weight);
+    const reps = Number(values.reps);
+    const notes = values.notes;
+
+    if (weight < 0) {
+      form.setError("weight", { message: "Weight must be positive" });
+      return;
+    }
+
+    if (reps < 1) {
+      form.setError("reps", { message: "Reps must be at least 1" });
+    }
+
+    if (isNaN(weight) || isNaN(reps)) {
+      form.setError("weight", { message: "Weight must be a number" });
+      form.setError("reps", { message: "Reps must be a number" });
+      return;
+    }
+
+    startTransition(async () => {
+      await addSetMutation({
+        exerciseSetId: props.exerciseSetId,
+        weightUnit: user?.preferences?.defaultWeightUnit || DEFAULT_WEIGHT,
+        set: {
+          weight,
+          reps,
+          notes,
+        },
+      });
+    });
+  }
+
   return (
-    <form>
-      <div className="grid grid-cols-[auto_1fr_1fr] gap-2">
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="grid grid-cols-[auto_1fr_1fr] gap-4"
+      >
         <div className="flex flex-col gap-2">
           <p className="text-xs text-muted-foreground">Set</p>
-          <p className=" text-lg font-semibold grow flex items-center">1</p>
+          <p className="text-lg font-semibold grow flex items-center">1</p>
         </div>
+
         <div className="flex flex-col gap-2">
-          <Label className="text-xs text-muted-foreground" htmlFor="weight">
-            Weight
-          </Label>
-          <div className="relative">
-            <span className="absolute right-4 border-l pl-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-              {user?.preferences?.defaultWeightUnit.toLowerCase()}
-            </span>
-            <Input type="number" min={0} id="weight" />
-          </div>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label className="text-xs text-muted-foreground" htmlFor="reps">
-            Reps
-          </Label>
-          <Input type="number" min={0} id="reps" />
-        </div>
-        <div className="flex flex-col gap-2 col-start-2 col-span-2">
-          <Label className="sr-only" htmlFor="notes">
-            Notes
-          </Label>
-          <Textarea
-            placeholder="Notes"
-            maxLength={255}
-            id="notes"
-            className="resize-none"
+          <FormField
+            control={form.control}
+            name="weight"
+            disabled={isPending}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs text-muted-foreground">
+                  Weight
+                </FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <span className="absolute right-4 border-l pl-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                      {user?.preferences?.defaultWeightUnit?.toLowerCase() ||
+                        DEFAULT_WEIGHT}
+                    </span>
+                    <Input type="number" min={0} placeholder="0" {...field} />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
-      </div>
-    </form>
+
+        <div className="flex flex-col gap-2">
+          <FormField
+            control={form.control}
+            name="reps"
+            disabled={isPending}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs text-muted-foreground">
+                  Reps
+                </FormLabel>
+                <FormControl>
+                  <Input type="number" min={1} placeholder="0" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2 col-start-2 col-span-2">
+          <FormField
+            control={form.control}
+            name="notes"
+            disabled={isPending}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="sr-only">Notes</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Notes (optional)"
+                    maxLength={255}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+                <div className="text-xs text-muted-foreground text-right">
+                  {field.value?.length || 0}/255
+                </div>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <Button
+          type="submit"
+          className="col-start-2 col-span-2 justify-self-end"
+          disabled={isPending}
+        >
+          Save set
+        </Button>
+      </form>
+    </Form>
   );
 }

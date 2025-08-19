@@ -98,7 +98,6 @@ export default defineSchema({
         weight: v.number(),
         weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
         isBodyWeight: v.boolean(),
-        restTime: v.optional(v.number()),
         notes: v.optional(v.string()),
       })
     ),
