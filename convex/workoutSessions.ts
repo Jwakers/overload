@@ -43,6 +43,23 @@ export const getOrCreate = mutation({
   },
 });
 
+export const setActive = mutation({
+  args: {
+    workoutSessionId: v.id("workoutSessions"),
+    isActive: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const workoutSession = await ctx.db.get(args.workoutSessionId);
+
+    if (workoutSession?.userId !== user._id) {
+      throw new Error("You are not allowed to update this workout session");
+    }
+
+    await ctx.db.patch(workoutSession._id, { isActive: args.isActive });
+  },
+});
+
 export const deleteWorkoutSession = mutation({
   args: {
     id: v.id("workoutSessions"),

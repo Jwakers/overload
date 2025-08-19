@@ -92,6 +92,7 @@ export default defineSchema({
     workoutSessionId: v.id("workoutSessions"),
     exerciseId: v.id("exercises"),
     order: v.number(),
+    isActive: v.boolean(),
     sets: v.array(
       v.object({
         reps: v.number(),

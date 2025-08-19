@@ -15,10 +15,32 @@ export const create = mutation({
       workoutSessionId: args.workoutSessionId,
       exerciseId: args.exerciseId,
       order: args.order,
+      isActive: true,
       sets: [],
     });
 
     return exerciseSetId;
+  },
+});
+
+export const get = query({
+  args: {
+    exerciseSetId: v.id("exerciseSets"),
+  },
+  handler: async (ctx, args) => {
+    const exerciseSet = await ctx.db.get(args.exerciseSetId);
+
+    return exerciseSet;
+  },
+});
+
+export const setActive = mutation({
+  args: {
+    exerciseSetId: v.id("exerciseSets"),
+    isActive: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.exerciseSetId, { isActive: args.isActive });
   },
 });
 
