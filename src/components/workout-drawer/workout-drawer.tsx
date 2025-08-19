@@ -71,6 +71,7 @@ import { Textarea } from "../ui/textarea";
 // TODO: Handle deleting and editing an exercise set
 // TODO: Handle deleting a workout session
 // TODO: Saving a workout should trigger a confirmation dialog
+// TODO: Move components to a separate file
 
 function WeightUnitToggle() {
   const user = useQuery(api.users.current);
@@ -90,10 +91,10 @@ function WeightUnitToggle() {
   if (!user) return null;
 
   return (
-    <div className="grid bg-muted grid-cols-2 rounded overflow-hidden">
+    <div className="text-sm gap-2 inline-grid grid-cols-2 ml-auto">
       <button
         className={cn(
-          "p-2 z-10 rounded",
+          "p-2 px-3 z-10 rounded bg-muted",
           updating && "bg-brand/50 cursor-not-allowed",
           user.preferences?.defaultWeightUnit === "lbs" &&
             "bg-brand text-brand-foreground"
@@ -106,7 +107,7 @@ function WeightUnitToggle() {
       </button>
       <button
         className={cn(
-          "p-2 z-10 rounded transition-colors",
+          "p-2 px-3 z-10 rounded transition-colors",
           updating && "bg-brand/50 cursor-not-allowed",
           user.preferences?.defaultWeightUnit === "kg" &&
             "bg-brand text-brand-foreground"
@@ -182,19 +183,18 @@ export function WorkoutDrawer() {
             </div>
           </button>
         </DrawerTrigger>
-        <DrawerContent className="h-full">
+        <DrawerContent className="">
           <DrawerHeader className="space-y-2">
-            <DrawerTitle>New Workout</DrawerTitle>
             <WeightUnitToggle />
           </DrawerHeader>
-          <ScrollArea className="h-full overflow-y-auto">
+          <ScrollArea className="h-[calc(100dvh-200px)]">
             <div className="container">
               <p className="my-2 text-sm text-destructive-foreground bg-destructive p-2 px-4 rounded-md">
                 TODO: There needs to be an way to add a split to this without
                 slowing down the flow.
               </p>
             </div>
-            <div className="container flex flex-col gap-2 h-full justify-end relative">
+            <div className="container flex flex-col gap-2 h-full justify-end">
               {exerciseSets?.map((exerciseSet, i) => {
                 return (
                   <div
@@ -224,7 +224,7 @@ export function WorkoutDrawer() {
               })}
               <button
                 className={cn(
-                  "flex justify-between sticky bottom-0 gap-2 rounded border border-dashed p-4 bg-background",
+                  "flex justify-between gap-2 rounded border border-dashed p-4 bg-background",
                   !workoutSessionId && "opacity-50 cursor-not-allowed"
                 )}
                 onClick={() => setSelectExerciseDialogOpen(true)}
@@ -242,25 +242,25 @@ export function WorkoutDrawer() {
               onChange={setSelectExerciseDialogOpen}
               onSelect={handleSelectExercise}
             />
-          </ScrollArea>
 
-          <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
-            <DrawerClose asChild>
-              <Button variant="outline">Delete Workout</Button>
-            </DrawerClose>
-            <Button
-              className="grow"
-              variant="primary"
-              onClick={() => {
-                if (!workoutSessionId) return;
-                setActiveMutation({ workoutSessionId, isActive: false });
-                setOpen(false);
-              }}
-            >
-              <Save />
-              <span>Save Workout</span>
-            </Button>
-          </DrawerFooter>
+            <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
+              <DrawerClose asChild>
+                <Button variant="outline">Delete Workout</Button>
+              </DrawerClose>
+              <Button
+                className="grow"
+                variant="primary"
+                onClick={() => {
+                  if (!workoutSessionId) return;
+                  setActiveMutation({ workoutSessionId, isActive: false });
+                  setOpen(false);
+                }}
+              >
+                <Save />
+                <span>Save Workout</span>
+              </Button>
+            </DrawerFooter>
+          </ScrollArea>
         </DrawerContent>
       </Drawer>
     </>
@@ -493,6 +493,10 @@ function ExerciseSetForm(props: { exerciseSetId: Id<"exerciseSets"> }) {
     });
   }
 
+  if (exerciseSet?.isActive) {
+    console.log({ exerciseSet });
+  }
+
   return (
     <div className="space-y-3">
       {exerciseSet ? (
@@ -545,9 +549,10 @@ function ExerciseSetForm(props: { exerciseSetId: Id<"exerciseSets"> }) {
                             DEFAULT_WEIGHT}
                         </span>
                         <Input
-                          type="number"
                           min={0}
                           placeholder="0"
+                          type="number"
+                          inputMode="numeric"
                           {...field}
                         />
                       </div>
@@ -567,7 +572,13 @@ function ExerciseSetForm(props: { exerciseSetId: Id<"exerciseSets"> }) {
                   <FormItem>
                     <FormLabel className="sr-only">Reps</FormLabel>
                     <FormControl>
-                      <Input type="number" min={1} placeholder="0" {...field} />
+                      <Input
+                        type="number"
+                        min={1}
+                        placeholder="0"
+                        inputMode="numeric"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -587,7 +598,6 @@ function ExerciseSetForm(props: { exerciseSetId: Id<"exerciseSets"> }) {
                       <Textarea
                         placeholder="Notes (optional)"
                         maxLength={255}
-                        className="text-sm"
                         {...field}
                       />
                     </FormControl>
@@ -602,7 +612,7 @@ function ExerciseSetForm(props: { exerciseSetId: Id<"exerciseSets"> }) {
             <div className="flex gap-2 col-start-1 col-span-3 justify-end">
               <Button
                 variant="outline"
-                disabled={isPending}
+                disabled={isPending || !exerciseSet?.sets.length}
                 type="button"
                 onClick={() => {
                   startTransition(async () => {
