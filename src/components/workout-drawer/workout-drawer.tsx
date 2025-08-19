@@ -143,6 +143,8 @@ export function WorkoutDrawer() {
   const [selectExerciseDialogOpen, setSelectExerciseDialogOpen] =
     useState(false);
 
+  const [isSaving, startSaving] = useTransition();
+
   useEffect(() => {
     if (workoutSessionId || !open) return;
     createWorkoutSession().then((id) => setWorkoutSessionId(id));
@@ -185,6 +187,7 @@ export function WorkoutDrawer() {
         </DrawerTrigger>
         <DrawerContent className="">
           <DrawerHeader className="space-y-2">
+            <DrawerTitle className="sr-only">New Workout</DrawerTitle>
             <WeightUnitToggle />
           </DrawerHeader>
           <ScrollArea className="h-[calc(100dvh-200px)]">
@@ -250,10 +253,16 @@ export function WorkoutDrawer() {
               <Button
                 className="grow"
                 variant="primary"
-                onClick={() => {
+                disabled={isSaving}
+                onClick={async () => {
                   if (!workoutSessionId) return;
-                  setActiveMutation({ workoutSessionId, isActive: false });
-                  setOpen(false);
+                  startSaving(async () => {
+                    await setActiveMutation({
+                      workoutSessionId,
+                      isActive: false,
+                    });
+                    setOpen(false);
+                  });
                 }}
               >
                 <Save />
@@ -491,10 +500,6 @@ function ExerciseSetForm(props: { exerciseSetId: Id<"exerciseSets"> }) {
         },
       });
     });
-  }
-
-  if (exerciseSet?.isActive) {
-    console.log({ exerciseSet });
   }
 
   return (
