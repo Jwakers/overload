@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import { useTransition } from "react";
@@ -6,10 +7,10 @@ import { api } from "../../../convex/_generated/api";
 export function WeightUnitToggle() {
   const user = useQuery(api.users.current);
   const updatePreferences = useMutation(api.users.updatePreferences);
-  const [updating, startUpdating] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
   const handleWeightUnitChange = async (unit: "lbs" | "kg") => {
-    startUpdating(async () => {
+    startTransition(async () => {
       await updatePreferences({
         preferences: {
           defaultWeightUnit: unit,
@@ -18,33 +19,41 @@ export function WeightUnitToggle() {
     });
   };
 
-  if (!user) return null;
+  if (!user)
+    return (
+      <div className="text-sm gap-2 inline-grid grid-cols-2 ml-auto">
+        <Skeleton className="h-9 w-12" />
+        <Skeleton className="h-9 w-12" />
+      </div>
+    );
 
   return (
     <div className="text-sm gap-2 inline-grid grid-cols-2 ml-auto">
       <button
         className={cn(
           "p-2 px-3 z-10 rounded bg-muted",
-          updating && "bg-brand/50 cursor-not-allowed",
+          isPending && "bg-brand/50 cursor-not-allowed",
           user.preferences?.defaultWeightUnit === "lbs" &&
             "bg-brand text-brand-foreground"
         )}
         onClick={() => handleWeightUnitChange("lbs")}
-        disabled={updating}
+        disabled={isPending}
         title="Change weight unit to lbs"
+        type="button"
       >
         LBS
       </button>
       <button
         className={cn(
           "p-2 px-3 z-10 rounded transition-colors",
-          updating && "bg-brand/50 cursor-not-allowed",
+          isPending && "bg-brand/50 cursor-not-allowed",
           user.preferences?.defaultWeightUnit === "kg" &&
             "bg-brand text-brand-foreground"
         )}
         onClick={() => handleWeightUnitChange("kg")}
-        disabled={updating}
+        disabled={isPending}
         title="Change weight unit to kg"
+        type="button"
       >
         KG
       </button>

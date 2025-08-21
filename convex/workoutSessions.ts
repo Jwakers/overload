@@ -52,9 +52,10 @@ export const setActive = mutation({
     const user = await getCurrentUserOrThrow(ctx);
     const workoutSession = await ctx.db.get(args.workoutSessionId);
 
-    if (workoutSession?.userId !== user._id) {
+    if (!workoutSession) throw new Error("Workout session not found");
+
+    if (workoutSession.userId !== user._id)
       throw new Error("You are not allowed to update this workout session");
-    }
 
     await ctx.db.patch(workoutSession._id, { isActive: args.isActive });
   },
@@ -68,9 +69,10 @@ export const complete = mutation({
     const user = await getCurrentUserOrThrow(ctx);
     const workoutSession = await ctx.db.get(args.workoutSessionId);
 
-    if (workoutSession?.userId !== user._id) {
+    if (!workoutSession) throw new Error("Workout session not found");
+
+    if (workoutSession.userId !== user._id)
       throw new Error("You are not allowed to update this workout session");
-    }
 
     await ctx.db.patch(workoutSession._id, {
       isActive: false,

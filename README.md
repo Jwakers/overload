@@ -4,6 +4,10 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 ## 🏋️‍♂️ Development Todo List
 
+### Bugs
+
+- [ ] Signed out users can see the nav and start workouts
+
 ### Phase 1: Project Setup & Dependencies
 
 - [x] **Install Setup**
@@ -174,6 +178,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] Start new workout button should say resume if there is an active workout. The drawer can be closed by accident this allows the user to quickly resume what they were doing
 - [ ] When starting a new workout we should query if there are any other workouts created today and if so offer to resume or create a new one.
 - [ ] Filter by muscle group AND equipment
+- [ ] Improve the muscle group system
+- [ ] Enforce only one active workout session (when requesting a new one all others should be set to isActive === false). No user should ever have multiple active sessions
 
 ## 🚀 Recommended Development Order
 

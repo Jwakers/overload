@@ -19,6 +19,7 @@ export const current = query({
 export const upsertFromClerk = internalMutation({
   args: { data: v.any() as Validator<UserJSON> }, // no runtime validation, trust Clerk
   async handler(ctx, { data }) {
+    const user = await userByExternalId(ctx, data.id);
     const userAttributes: WithoutSystemFields<Doc<"users">> = {
       name: `${data.first_name} ${data.last_name}`,
       externalId: data.id,
@@ -26,10 +27,9 @@ export const upsertFromClerk = internalMutation({
         defaultWeightUnit: "lbs",
         defaultRestTime: 60,
         weightTrackingFrequency: "manual",
+        ...(user?.preferences ?? {}),
       },
     };
-
-    const user = await userByExternalId(ctx, data.id);
     if (user === null) {
       await ctx.db.insert("users", userAttributes);
     } else {

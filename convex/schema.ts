@@ -65,7 +65,7 @@ export default defineSchema({
         v.literal("medicine ball"),
         v.literal("jump rope"),
         v.literal("resistance band"),
-        v.literal("TRX"),
+        v.literal("trx"),
         v.literal("other")
       )
     ),
@@ -75,7 +75,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("byUserId", ["userId"])
-    .index("byMuscleGroups", ["muscleGroups"]),
+    .index("byMuscleGroups", ["muscleGroups"])
+    .index("byEquipment", ["equipment"]),
 
   workoutSessions: defineTable({
     userId: v.id("users"),

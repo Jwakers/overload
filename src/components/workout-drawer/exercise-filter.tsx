@@ -1,8 +1,11 @@
 import { cn } from "@/lib/utils";
-import { Filter as FilterIcon, CheckIcon } from "lucide-react";
+import { CheckIcon, Filter as FilterIcon } from "lucide-react";
 import { useState } from "react";
+import {
+  getAllMuscleGroups,
+  MUSCLE_GROUPS,
+} from "../../../convex/lib/muscle_groups";
 import { Button } from "../ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -11,10 +14,7 @@ import {
   CommandItem,
   CommandList,
 } from "../ui/command";
-import {
-  getAllMuscleGroups,
-  MUSCLE_GROUPS,
-} from "../../../convex/lib/muscle_groups";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
 interface ExerciseFilterProps {
   value: string;
@@ -30,12 +30,7 @@ export function ExerciseFilter({ value, setValue }: ExerciseFilterProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          title="Filter exercises"
-        >
+        <Button variant="outline" title="Filter exercises">
           <FilterIcon />
           <span>Filter</span>
         </Button>
@@ -54,11 +49,12 @@ export function ExerciseFilter({ value, setValue }: ExerciseFilterProps) {
                     setValue(currentValue === value ? "" : currentValue);
                     setOpen(false);
                   }}
+                  className="capitalize"
                 >
                   {group.split("_").join(" ")}
                   <CheckIcon
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "ml-auto h-4 w-4",
                       value === group ? "opacity-100" : "opacity-0"
                     )}
                   />
@@ -70,4 +66,4 @@ export function ExerciseFilter({ value, setValue }: ExerciseFilterProps) {
       </PopoverContent>
     </Popover>
   );
-} 
+}

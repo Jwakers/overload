@@ -15,7 +15,6 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
 import {
   Table,
   TableBody,
@@ -24,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { Textarea } from "../ui/textarea";
 
 // Exercise set form schema
 const exerciseSetSchema = z.object({
@@ -76,6 +76,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
 
     if (reps < 1) {
       form.setError("reps", { message: "Reps must be at least 1" });
+      return;
     }
 
     if (isNaN(weight) || isNaN(reps)) {
@@ -235,4 +236,4 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
       ) : null}
     </div>
   );
-} 
+}

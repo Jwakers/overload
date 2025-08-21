@@ -10,7 +10,17 @@ export const create = mutation({
     order: v.number(),
   },
   handler: async (ctx, args) => {
-    await getCurrentUserOrThrow(ctx);
+    const user = await getCurrentUserOrThrow(ctx);
+    const workoutSession = await ctx.db.get(args.workoutSessionId);
+    if (!workoutSession || workoutSession.userId !== user._id) {
+      throw new Error(
+        "You are not allowed to add exercise sets to this workout session"
+      );
+    }
+    const exercise = await ctx.db.get(args.exerciseId);
+    if (!exercise) {
+      throw new Error("Exercise not found");
+    }
     const exerciseSetId = await ctx.db.insert("exerciseSets", {
       workoutSessionId: args.workoutSessionId,
       exerciseId: args.exerciseId,
@@ -56,6 +66,9 @@ export const getSets = query({
       )
       .collect();
 
+    // Ensure deterministic order in the UI
+    exerciseSets.sort((a, b) => a.order - b.order);
+
     const enrichedSets = await Promise.all(
       exerciseSets?.map(async (set) => {
         const exercise = await ctx.db.get(set.exerciseId);
@@ -81,9 +94,21 @@ export const addSet = mutation({
     }),
   },
   handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
     const exerciseSet = await ctx.db.get(args.exerciseSetId);
     if (!exerciseSet) {
       throw new Error("Exercise set not found");
+    }
+    const workoutSession = await ctx.db.get(exerciseSet.workoutSessionId);
+    if (!workoutSession || workoutSession.userId !== user._id) {
+      throw new Error("You are not allowed to modify this exercise set");
+    }
+    // Basic validation
+    if (!Number.isFinite(args.set.weight) || args.set.weight < 0) {
+      throw new Error("Weight must be a non-negative number");
+    }
+    if (!Number.isFinite(args.set.reps) || args.set.reps < 1) {
+      throw new Error("Reps must be at least 1");
     }
 
     const set: Doc<"exerciseSets">["sets"][number] = {

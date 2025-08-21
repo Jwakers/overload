@@ -24,12 +24,9 @@
 {"name": "Seated Overhead Press", "muscleGroups": ["shoulders", "shoulders_front", "shoulders_middle", "triceps"], "equipment": "barbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Seated Overhead Press", "muscleGroups": ["shoulders", "shoulders_front", "shoulders_middle", "triceps"], "equipment": "dumbbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Lateral Raises", "muscleGroups": ["shoulders", "shoulders_middle"], "equipment": "dumbbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
-{"name": "Lateral Raises", "muscleGroups": ["shoulders", "shoulders_middle"], "equipment": "dumbbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Lateral Raises", "muscleGroups": ["shoulders", "shoulders_middle"], "equipment": "cable", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Front Raises", "muscleGroups": ["shoulders", "shoulders_front"], "equipment": "dumbbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
-{"name": "Front Raises", "muscleGroups": ["shoulders", "shoulders_front"], "equipment": "dumbbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Front Raises", "muscleGroups": ["shoulders", "shoulders_front"], "equipment": "barbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
-{"name": "Rear Delt Flyes", "muscleGroups": ["shoulders", "shoulders_rear"], "equipment": "dumbbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Rear Delt Flyes", "muscleGroups": ["shoulders", "shoulders_rear"], "equipment": "dumbbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Rear Delt Flyes", "muscleGroups": ["shoulders", "shoulders_rear"], "equipment": "cable", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Curl", "muscleGroups": ["biceps", "biceps_long_head", "biceps_short_head", "forearms"], "equipment": "barbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
@@ -41,14 +38,11 @@
 {"name": "Concentration Curl", "muscleGroups": ["biceps", "biceps_short_head"], "equipment": "dumbbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Curl", "muscleGroups": ["biceps", "biceps_long_head", "biceps_short_head", "forearms"], "equipment": "cable", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Tricep Pushdown", "muscleGroups": ["triceps", "triceps_lateral_head", "triceps_medial_head"], "equipment": "cable", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
-{"name": "Tricep Pushdown", "muscleGroups": ["triceps", "triceps_lateral_head", "triceps_medial_head"], "equipment": "cable", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Rope Tricep Pushdown", "muscleGroups": ["triceps", "triceps_lateral_head", "triceps_medial_head"], "equipment": "cable", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Tricep Dips", "muscleGroups": ["triceps", "triceps_long_head", "chest", "shoulders_front"], "equipment": "bodyweight", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Bench Dips", "muscleGroups": ["triceps", "triceps_long_head", "chest", "shoulders_front"], "equipment": "bodyweight", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Skull Crushers", "muscleGroups": ["triceps", "triceps_long_head"], "equipment": "barbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
-{"name": "Skull Crushers", "muscleGroups": ["triceps", "triceps_long_head"], "equipment": "barbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Skull Crushers", "muscleGroups": ["triceps", "triceps_long_head"], "equipment": "dumbbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
-{"name": "Overhead Tricep Extension", "muscleGroups": ["triceps", "triceps_long_head"], "equipment": "dumbbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Overhead Tricep Extension", "muscleGroups": ["triceps", "triceps_long_head"], "equipment": "dumbbell", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Overhead Tricep Extension", "muscleGroups": ["triceps", "triceps_long_head"], "equipment": "cable", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}
 {"name": "Squat", "muscleGroups": ["legs", "quads", "quads_rectus_femoris", "quads_vastus_lateralis", "quads_vastus_medialis", "quads_vastus_intermedius", "glutes", "glutes_maximus", "core", "core_lower_back"], "equipment": "bodyweight", "isCustom": false, "isActive": true, "createdAt": 1704067200000, "updatedAt": 1704067200000}

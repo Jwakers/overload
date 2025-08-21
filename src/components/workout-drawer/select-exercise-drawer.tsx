@@ -1,19 +1,10 @@
-import { PlusCircle, X } from "lucide-react";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { useQuery } from "convex/react";
+import { PlusCircle, X } from "lucide-react";
+import { Dispatch, SetStateAction, useMemo, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import {
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerNested,
-  DrawerTitle,
-  DrawerClose,
-} from "../ui/drawer";
+import { Button } from "../ui/button";
 import {
   Command,
   CommandEmpty,
@@ -22,6 +13,15 @@ import {
   CommandItem,
   CommandList,
 } from "../ui/command";
+import {
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerNested,
+  DrawerTitle,
+} from "../ui/drawer";
 import { ExerciseFilter } from "./exercise-filter";
 
 interface SelectExerciseDrawerProps {
@@ -37,18 +37,25 @@ export function SelectExerciseDrawer({
 }: SelectExerciseDrawerProps) {
   const exercises = useQuery(api.exercises.getAll);
   const [filterValue, setFilterValue] = useState<string>("");
-  const [refinedExercises, setRefinedExercises] =
-    useState<typeof exercises>(exercises);
+  const refinedExercises = useMemo(() => {
+    if (!exercises) return exercises;
+    const fv = filterValue?.toLowerCase();
 
-  useEffect(() => {
-    if (!exercises) return;
-    const filterRefined = exercises.filter((exercise) => {
-      if (!filterValue) return true;
-      return exercise.muscleGroups.some((group) => group.includes(filterValue));
+    return exercises.filter((exercise) => {
+      if (!fv) return true;
+      return exercise.muscleGroups.some((group) => group.toLowerCase() === fv);
     });
-
-    setRefinedExercises(filterRefined);
   }, [exercises, filterValue]);
+
+  const duplicateNames = useMemo(() => {
+    const counts = new Map<string, number>();
+    (refinedExercises ?? []).forEach((e) =>
+      counts.set(e.name, (counts.get(e.name) ?? 0) + 1)
+    );
+    return new Set(
+      [...counts.entries()].filter(([, c]) => c > 1).map(([n]) => n)
+    );
+  }, [refinedExercises]);
 
   return (
     <DrawerNested open={open} onOpenChange={onChange}>
@@ -66,9 +73,8 @@ export function SelectExerciseDrawer({
               <CommandEmpty>No exercises found.</CommandEmpty>
               <CommandGroup>
                 {refinedExercises?.map((exercise) => {
-                  const hasDuplicate = refinedExercises.some(
-                    (e) => e.name === exercise.name && e._id !== exercise._id
-                  );
+                  const hasDuplicate = duplicateNames.has(exercise.name);
+
                   return (
                     <CommandItem
                       key={exercise._id}
@@ -119,8 +125,8 @@ export function SelectExerciseDrawer({
           <div className="flex items-center gap-2">
             {filterValue && (
               <Button asChild onClick={() => setFilterValue("")} size="sm">
-                <Badge>
-                  {filterValue} <X size={12} />
+                <Badge className="capitalize">
+                  {filterValue.split("_").join(" ")} <X size={12} />
                 </Badge>
               </Button>
             )}
@@ -130,4 +136,4 @@ export function SelectExerciseDrawer({
       </DrawerContent>
     </DrawerNested>
   );
-} 
+}

@@ -55,11 +55,11 @@ This directory contains the refactored workout drawer components that were previ
 Import components individually or use the index file:
 
 ```tsx
-// Individual imports
-import { WorkoutDrawer } from "./workout-drawer";
-import { WeightUnitToggle } from "./weight-unit-toggle";
+// Individual imports (deep paths)
+import { WorkoutDrawer } from "./workout-drawer/workout-drawer";
+import { WeightUnitToggle } from "./workout-drawer/weight-unit-toggle";
 
-// Or use the index file
+// Or use the barrel (index.ts) in this directory
 import { WorkoutDrawer, WeightUnitToggle } from "./workout-drawer";
 ```
 

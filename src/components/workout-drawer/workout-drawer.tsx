@@ -89,6 +89,7 @@ export function WorkoutDrawer() {
       await deleteWorkoutSession({ id: workoutSessionId });
       setOpen(false);
       setDeleteAlertOpen(false);
+      setWorkoutSessionId(null);
     });
   };
 
@@ -204,6 +205,7 @@ export function WorkoutDrawer() {
                       workoutSessionId,
                     });
                     setOpen(false);
+                    setWorkoutSessionId(null);
                   });
                 }}
               >
