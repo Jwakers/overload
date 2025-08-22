@@ -112,6 +112,9 @@ export const addSet = mutation({
     if (!Number.isFinite(args.set.reps) || args.set.reps < 1) {
       throw new Error("Reps must be at least 1");
     }
+    if (args.set.notes && args.set.notes.length > 255) {
+      throw new Error("Notes must be no more than 255 characters");
+    }
 
     const set: Doc<"exerciseSets">["sets"][number] = {
       id: crypto.randomUUID(),

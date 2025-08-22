@@ -1,21 +1,11 @@
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
-import { Edit, Plus, PlusCircle, Save, Trash2 } from "lucide-react";
+import { Edit, Plus, PlusCircle, Save } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../ui/alert-dialog";
 import { Button } from "../ui/button";
+import { DeleteDialog } from "../ui/delete-dialog";
 import {
   Drawer,
   DrawerContent,
@@ -37,7 +27,6 @@ export function WorkoutDrawer() {
   const [open, setOpen] = useState(false);
   const [workoutSessionId, setWorkoutSessionId] =
     useState<Id<"workoutSessions"> | null>(null);
-  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
 
   const createWorkoutSession = useMutation(api.workoutSessions.getOrCreate);
   const deleteWorkoutSession = useMutation(
@@ -46,9 +35,6 @@ export function WorkoutDrawer() {
   const completeMutation = useMutation(api.workoutSessions.complete);
   const createExerciseSet = useMutation(api.exerciseSets.create);
   const deleteExerciseSet = useMutation(api.exerciseSets.deleteExerciseSet);
-
-  // TODO: Add mutation for deleting exercise sets
-  // const deleteExerciseSetMutation = useMutation(api.exerciseSets.deleteExerciseSet);
 
   const exerciseSets = useQuery(
     api.exerciseSets.getSets,
@@ -83,7 +69,6 @@ export function WorkoutDrawer() {
     startTransition(async () => {
       await deleteWorkoutSession({ id: workoutSessionId });
       setOpen(false);
-      setDeleteAlertOpen(false);
       setWorkoutSessionId(null);
     });
   };
@@ -137,11 +122,15 @@ export function WorkoutDrawer() {
                         {exerciseSet.exercise?.name}
                       </p>
                       {exerciseSet.isActive ? (
-                        <DeleteExerciseAlert
+                        <DeleteDialog
                           disabled={isPending}
                           onConfirm={() =>
                             handleDeleteExercise(exerciseSet._id)
                           }
+                          title="Delete Exercise"
+                          description="Are you sure you want to delete this exercise? All sets will be permanently removed. This action cannot be undone."
+                          confirmButtonText="Delete Exercise"
+                          triggerTitle="Delete exercise"
                         />
                       ) : (
                         <button title="Start exercise">
@@ -175,31 +164,14 @@ export function WorkoutDrawer() {
             />
 
             <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
-              <AlertDialog
-                open={deleteAlertOpen}
-                onOpenChange={setDeleteAlertOpen}
+              <DeleteDialog
+                onConfirm={handleDeleteWorkout}
+                title="Delete Workout"
+                description="Are you sure you want to delete this workout? This action cannot be undone."
+                confirmButtonText="Delete"
               >
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline">Delete Workout</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Workout</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete this workout? This action
-                      cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <Button variant="destructive" asChild>
-                      <AlertDialogAction onClick={handleDeleteWorkout}>
-                        Delete
-                      </AlertDialogAction>
-                    </Button>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                <Button variant="outline">Delete Workout</Button>
+              </DeleteDialog>
 
               <Button
                 className="grow"
@@ -227,45 +199,5 @@ export function WorkoutDrawer() {
         </DrawerContent>
       </Drawer>
     </>
-  );
-}
-
-export function DeleteExerciseAlert({
-  disabled,
-  onConfirm,
-}: {
-  disabled: boolean;
-  onConfirm: () => void;
-}) {
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          title="Delete exercise"
-          disabled={disabled}
-        >
-          <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete Exercise</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete this exercise? All sets will be
-            permanently removed. This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <Button variant="destructive" asChild>
-            <AlertDialogAction onClick={onConfirm}>
-              Delete Exercise
-            </AlertDialogAction>
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   );
 }

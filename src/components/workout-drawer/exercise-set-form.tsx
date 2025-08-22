@@ -1,23 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
-import { Trash2 } from "lucide-react";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../ui/alert-dialog";
 import { Button } from "../ui/button";
+import { DeleteDialog } from "../ui/delete-dialog";
 import {
   Form,
   FormControl,
@@ -144,9 +133,13 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                   </TableCell>
                   <TableCell>{set.reps}</TableCell>
                   <TableCell className="text-right">
-                    <DeleteSetAlert
+                    <DeleteDialog
                       disabled={isPending}
                       onConfirm={() => handleDeleteSet(set.id)}
+                      title="Delete Set"
+                      description="Are you sure you want to delete this set? This action cannot be undone."
+                      confirmButtonText="Delete Set"
+                      triggerTitle="Delete set"
                     />
                   </TableCell>
                 </TableRow>
@@ -265,45 +258,5 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
         </Form>
       ) : null}
     </div>
-  );
-}
-
-function DeleteSetAlert({
-  disabled,
-  onConfirm,
-}: {
-  disabled: boolean;
-  onConfirm: () => void;
-}) {
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          title="Delete set"
-          disabled={disabled}
-        >
-          <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete Set</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete this set? This action cannot be
-            undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <Button variant="destructive" asChild>
-            <AlertDialogAction onClick={onConfirm}>
-              Delete Set
-            </AlertDialogAction>
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   );
 }
