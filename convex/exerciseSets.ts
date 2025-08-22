@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { Doc } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { Doc, Id } from "./_generated/dataModel";
+import { mutation, MutationCtx, query } from "./_generated/server";
 import { getCurrentUserOrThrow } from "./users";
 
 export const create = mutation({
@@ -16,6 +16,7 @@ export const create = mutation({
         "You are not allowed to add exercise sets to this workout session"
       );
     }
+
     const exercise = await ctx.db.get(args.exerciseId);
     if (!exercise) {
       throw new Error("Exercise not found");
@@ -102,15 +103,8 @@ export const addSet = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
-    const exerciseSet = await ctx.db.get(args.exerciseSetId);
-    if (!exerciseSet) {
-      throw new Error("Exercise set not found");
-    }
-    const workoutSession = await ctx.db.get(exerciseSet.workoutSessionId);
-    if (!workoutSession || workoutSession.userId !== user._id) {
-      throw new Error("You are not allowed to modify this exercise set");
-    }
+    const { exerciseSet } = await assertAccess(ctx, args.exerciseSetId);
+
     // Basic validation
     if (!Number.isFinite(args.set.weight) || args.set.weight < 0) {
       throw new Error("Weight must be a non-negative number");
@@ -118,8 +112,12 @@ export const addSet = mutation({
     if (!Number.isFinite(args.set.reps) || args.set.reps < 1) {
       throw new Error("Reps must be at least 1");
     }
+    if (args.set.notes && args.set.notes.length > 255) {
+      throw new Error("Notes must be no more than 255 characters");
+    }
 
     const set: Doc<"exerciseSets">["sets"][number] = {
+      id: crypto.randomUUID(),
       weight: args.set.weight,
       reps: args.set.reps,
       notes: args.set.notes,
@@ -132,3 +130,48 @@ export const addSet = mutation({
     });
   },
 });
+
+export const deleteExerciseSet = mutation({
+  args: {
+    exerciseSetId: v.id("exerciseSets"),
+  },
+  handler: async (ctx, args) => {
+    await assertAccess(ctx, args.exerciseSetId);
+
+    await ctx.db.delete(args.exerciseSetId);
+  },
+});
+
+export const deleteSet = mutation({
+  args: {
+    exerciseSetId: v.id("exerciseSets"),
+    setId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { exerciseSet } = await assertAccess(ctx, args.exerciseSetId);
+
+    await ctx.db.patch(args.exerciseSetId, {
+      sets: exerciseSet.sets.filter((set) => set.id !== args.setId),
+    });
+  },
+});
+
+async function assertAccess(
+  ctx: MutationCtx,
+  exerciseSetId: Id<"exerciseSets">
+) {
+  const user = await getCurrentUserOrThrow(ctx);
+  const exerciseSet = await ctx.db.get(exerciseSetId);
+  if (!exerciseSet) {
+    throw new Error("Exercise set not found");
+  }
+  const workoutSession = await ctx.db.get(exerciseSet.workoutSessionId);
+  if (!workoutSession || workoutSession.userId !== user._id) {
+    throw new Error("You are not authorised to edit this data");
+  }
+
+  return {
+    exerciseSet,
+    workoutSession,
+  };
+}

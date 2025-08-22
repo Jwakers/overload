@@ -6,6 +6,7 @@ import { z } from "zod";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "../ui/button";
+import { DeleteDialog } from "../ui/delete-dialog";
 import {
   Form,
   FormControl,
@@ -53,6 +54,8 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
   });
   const addSetMutation = useMutation(api.exerciseSets.addSet);
   const setActiveMutation = useMutation(api.exerciseSets.setActive);
+  const deleteSetMutation = useMutation(api.exerciseSets.deleteSet);
+
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<ExerciseSetFormData>({
@@ -98,6 +101,15 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
     });
   }
 
+  const handleDeleteSet = async (setId: string) => {
+    startTransition(async () => {
+      await deleteSetMutation({
+        exerciseSetId,
+        setId,
+      });
+    });
+  };
+
   return (
     <div className="space-y-3">
       {exerciseSet ? (
@@ -108,6 +120,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                 <TableHead className="w-16">Set</TableHead>
                 <TableHead>Weight</TableHead>
                 <TableHead>Reps</TableHead>
+                <TableHead className="w-16">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -119,6 +132,16 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                     {set.weightUnit}
                   </TableCell>
                   <TableCell>{set.reps}</TableCell>
+                  <TableCell className="text-right">
+                    <DeleteDialog
+                      disabled={isPending}
+                      onConfirm={() => handleDeleteSet(set.id)}
+                      title="Delete Set"
+                      description="Are you sure you want to delete this set? This action cannot be undone."
+                      confirmButtonText="Delete Set"
+                      triggerTitle="Delete set"
+                    />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

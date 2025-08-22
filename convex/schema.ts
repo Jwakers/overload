@@ -95,6 +95,7 @@ export default defineSchema({
     isActive: v.boolean(),
     sets: v.array(
       v.object({
+        id: v.string(),
         reps: v.number(),
         weight: v.number(),
         weightUnit: v.union(v.literal("lbs"), v.literal("kg")),

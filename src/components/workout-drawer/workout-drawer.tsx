@@ -1,21 +1,11 @@
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
-import { Edit, Plus, PlusCircle, Save, Trash2 } from "lucide-react";
+import { Edit, Plus, PlusCircle, Save } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../ui/alert-dialog";
 import { Button } from "../ui/button";
+import { DeleteDialog } from "../ui/delete-dialog";
 import {
   Drawer,
   DrawerContent,
@@ -29,7 +19,6 @@ import { ExerciseSetForm } from "./exercise-set-form";
 import { SelectExerciseDrawer } from "./select-exercise-drawer";
 import { WeightUnitToggle } from "./weight-unit-toggle";
 
-// TODO: Handle deleting and editing an exercise set
 // TODO: Add toast and handle errors throughout all workout drawer components
 // TODO: Saving a workout should trigger a confirmation dialog
 //       - This confirmation should also ask if the user has any notes about the workout, which save onBlur to the session
@@ -38,13 +27,15 @@ export function WorkoutDrawer() {
   const [open, setOpen] = useState(false);
   const [workoutSessionId, setWorkoutSessionId] =
     useState<Id<"workoutSessions"> | null>(null);
-  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+
   const createWorkoutSession = useMutation(api.workoutSessions.getOrCreate);
   const deleteWorkoutSession = useMutation(
     api.workoutSessions.deleteWorkoutSession
   );
   const completeMutation = useMutation(api.workoutSessions.complete);
   const createExerciseSet = useMutation(api.exerciseSets.create);
+  const deleteExerciseSet = useMutation(api.exerciseSets.deleteExerciseSet);
+
   const exerciseSets = useQuery(
     api.exerciseSets.getSets,
     workoutSessionId
@@ -63,16 +54,6 @@ export function WorkoutDrawer() {
     createWorkoutSession().then((id) => setWorkoutSessionId(id));
   }, [open, createWorkoutSession, workoutSessionId]);
 
-  useEffect(() => {
-    // If there are no exercises when the component unmounts, delete the workout session.
-    // This ensures that accidentally started sessions are not resumed on different days,
-    // which could lead to data confusion and inaccuracies.
-    return () => {
-      if (!workoutSessionId || exerciseSets?.length) return;
-      deleteWorkoutSession({ id: workoutSessionId });
-    };
-  }, [workoutSessionId, deleteWorkoutSession, exerciseSets]);
-
   const handleSelectExercise = async (exerciseId: Id<"exercises">) => {
     if (!workoutSessionId) return;
 
@@ -88,8 +69,15 @@ export function WorkoutDrawer() {
     startTransition(async () => {
       await deleteWorkoutSession({ id: workoutSessionId });
       setOpen(false);
-      setDeleteAlertOpen(false);
       setWorkoutSessionId(null);
+    });
+  };
+
+  const handleDeleteExercise = async (exerciseSetId: Id<"exerciseSets">) => {
+    startTransition(async () => {
+      await deleteExerciseSet({
+        exerciseSetId,
+      });
     });
   };
 
@@ -134,9 +122,16 @@ export function WorkoutDrawer() {
                         {exerciseSet.exercise?.name}
                       </p>
                       {exerciseSet.isActive ? (
-                        <button title="Delete exercise">
-                          <Trash2 className="text-destructive " />
-                        </button>
+                        <DeleteDialog
+                          disabled={isPending}
+                          onConfirm={() =>
+                            handleDeleteExercise(exerciseSet._id)
+                          }
+                          title="Delete Exercise"
+                          description="Are you sure you want to delete this exercise? All sets will be permanently removed. This action cannot be undone."
+                          confirmButtonText="Delete Exercise"
+                          triggerTitle="Delete exercise"
+                        />
                       ) : (
                         <button title="Start exercise">
                           <Edit />
@@ -169,31 +164,15 @@ export function WorkoutDrawer() {
             />
 
             <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
-              <AlertDialog
-                open={deleteAlertOpen}
-                onOpenChange={setDeleteAlertOpen}
+              <DeleteDialog
+                onConfirm={handleDeleteWorkout}
+                title="Delete Workout"
+                description="Are you sure you want to delete this workout? This action cannot be undone."
+                confirmButtonText="Delete"
               >
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline">Delete Workout</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Workout</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete this workout? This action
-                      cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <Button variant="destructive" asChild>
-                      <AlertDialogAction onClick={handleDeleteWorkout}>
-                        Delete
-                      </AlertDialogAction>
-                    </Button>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                <Button variant="outline">Delete Workout</Button>
+              </DeleteDialog>
+
               <Button
                 className="grow"
                 variant="primary"
