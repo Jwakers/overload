@@ -7,7 +7,6 @@ export const create = mutation({
   args: {
     workoutSessionId: v.id("workoutSessions"),
     exerciseId: v.id("exercises"),
-    order: v.number(),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
@@ -21,11 +20,20 @@ export const create = mutation({
     if (!exercise) {
       throw new Error("Exercise not found");
     }
+    const previousSets = await ctx.db
+      .query("exerciseSets")
+      .withIndex("byWorkoutSessionId", (q) =>
+        q.eq("workoutSessionId", args.workoutSessionId)
+      )
+      .collect();
+
+    const nextOrder =
+      Math.max(...(previousSets ?? []).map((s) => s.order ?? 0), 0) + 1;
     const exerciseSetId = await ctx.db.insert("exerciseSets", {
       workoutSessionId: args.workoutSessionId,
       exerciseId: args.exerciseId,
-      order: args.order,
       isActive: true,
+      order: nextOrder,
       sets: [],
     });
 

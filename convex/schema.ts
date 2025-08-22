@@ -60,7 +60,6 @@ export default defineSchema({
         v.literal("kettlebell"),
         v.literal("bodyweight"),
         v.literal("dumbbell"),
-        v.literal("band"),
         v.literal("plate"),
         v.literal("medicine ball"),
         v.literal("jump rope"),

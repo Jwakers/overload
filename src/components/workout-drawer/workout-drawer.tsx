@@ -30,6 +30,7 @@ import { SelectExerciseDrawer } from "./select-exercise-drawer";
 import { WeightUnitToggle } from "./weight-unit-toggle";
 
 // TODO: Handle deleting and editing an exercise set
+// TODO: Add toast and handle errors throughout all workout drawer components
 // TODO: Saving a workout should trigger a confirmation dialog
 //       - This confirmation should also ask if the user has any notes about the workout, which save onBlur to the session
 
@@ -63,14 +64,14 @@ export function WorkoutDrawer() {
   }, [open, createWorkoutSession, workoutSessionId]);
 
   useEffect(() => {
-    // If there are no exercises on unmounting then delete the workout session
+    // If there are no exercises when the component unmounts, delete the workout session.
+    // This ensures that accidentally started sessions are not resumed on different days,
+    // which could lead to data confusion and inaccuracies.
     return () => {
-      console.log("unmounting", workoutSessionId);
-      if (!workoutSessionId) return;
-      // TODO: Check if there are any exercises on the workout session
-      // deleteWorkoutSession({ id: workoutSessionId });
+      if (!workoutSessionId || exerciseSets?.length) return;
+      deleteWorkoutSession({ id: workoutSessionId });
     };
-  }, [workoutSessionId, deleteWorkoutSession]);
+  }, [workoutSessionId, deleteWorkoutSession, exerciseSets]);
 
   const handleSelectExercise = async (exerciseId: Id<"exercises">) => {
     if (!workoutSessionId) return;
@@ -78,7 +79,6 @@ export function WorkoutDrawer() {
     await createExerciseSet({
       workoutSessionId,
       exerciseId,
-      order: (exerciseSets?.length ?? 0) + 1,
     });
     setSelectExerciseDialogOpen(false);
   };
@@ -197,15 +197,18 @@ export function WorkoutDrawer() {
               <Button
                 className="grow"
                 variant="primary"
-                disabled={isPending}
+                disabled={isPending || !exerciseSets?.length}
                 onClick={async () => {
-                  if (!workoutSessionId) return;
+                  if (!workoutSessionId || !exerciseSets?.length) return;
                   startTransition(async () => {
-                    await completeMutation({
-                      workoutSessionId,
-                    });
-                    setOpen(false);
-                    setWorkoutSessionId(null);
+                    try {
+                      await completeMutation({ workoutSessionId });
+                      setOpen(false);
+                      setWorkoutSessionId(null);
+                    } catch (err) {
+                      console.error("Failed to complete workout", err);
+                      // TODO: Replace with toast/notification
+                    }
                   });
                 }}
               >
