@@ -1,6 +1,13 @@
 import { UserJSON } from "@clerk/backend";
+import { WithoutSystemFields } from "convex/server";
 import { v, Validator } from "convex/values";
-import { internalMutation, query, QueryCtx } from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
+import {
+  internalMutation,
+  mutation,
+  query,
+  QueryCtx,
+} from "./_generated/server";
 
 export const current = query({
   args: {},
@@ -12,12 +19,17 @@ export const current = query({
 export const upsertFromClerk = internalMutation({
   args: { data: v.any() as Validator<UserJSON> }, // no runtime validation, trust Clerk
   async handler(ctx, { data }) {
-    const userAttributes = {
+    const user = await userByExternalId(ctx, data.id);
+    const userAttributes: WithoutSystemFields<Doc<"users">> = {
       name: `${data.first_name} ${data.last_name}`,
       externalId: data.id,
+      preferences: {
+        defaultWeightUnit: "lbs",
+        defaultRestTime: 60,
+        weightTrackingFrequency: "manual",
+        ...(user?.preferences ?? {}),
+      },
     };
-
-    const user = await userByExternalId(ctx, data.id);
     if (user === null) {
       await ctx.db.insert("users", userAttributes);
     } else {
@@ -61,3 +73,24 @@ async function userByExternalId(ctx: QueryCtx, externalId: string) {
     .withIndex("byExternalId", (q) => q.eq("externalId", externalId))
     .unique();
 }
+
+export const updatePreferences = mutation({
+  args: {
+    preferences: v.object({
+      defaultWeightUnit: v.union(v.literal("lbs"), v.literal("kg")),
+      defaultRestTime: v.optional(v.number()),
+      weightTrackingFrequency: v.optional(
+        v.union(v.literal("weekly"), v.literal("monthly"), v.literal("manual"))
+      ),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    await ctx.db.patch(user._id, {
+      preferences: {
+        ...user.preferences,
+        ...args.preferences,
+      },
+    });
+  },
+});

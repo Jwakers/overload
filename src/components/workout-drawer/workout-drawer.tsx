@@ -1,54 +1,62 @@
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
-import {
-  CheckIcon,
-  Delete,
-  Filter as FilterIcon,
-  Plus,
-  PlusCircle,
-  Save,
-  X,
-} from "lucide-react";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Edit, Plus, PlusCircle, Save, Trash2 } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import {
-  getAllMuscleGroups,
-  MUSCLE_GROUPS,
-} from "../../../convex/lib/muscle_groups";
-import { Badge } from "../ui/badge";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
 import { Button } from "../ui/button";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "../ui/command";
-import {
   Drawer,
-  DrawerClose,
   DrawerContent,
-  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
-  DrawerNested,
   DrawerTitle,
   DrawerTrigger,
 } from "../ui/drawer";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { ScrollArea } from "../ui/scroll-area";
+import { ExerciseSetForm } from "./exercise-set-form";
+import { SelectExerciseDrawer } from "./select-exercise-drawer";
+import { WeightUnitToggle } from "./weight-unit-toggle";
+
+// TODO: Handle deleting and editing an exercise set
+// TODO: Add toast and handle errors throughout all workout drawer components
+// TODO: Saving a workout should trigger a confirmation dialog
+//       - This confirmation should also ask if the user has any notes about the workout, which save onBlur to the session
 
 export function WorkoutDrawer() {
   const [open, setOpen] = useState(false);
   const [workoutSessionId, setWorkoutSessionId] =
     useState<Id<"workoutSessions"> | null>(null);
-  const createWorkoutSession = useMutation(api.workoutSessions.create);
+  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+  const createWorkoutSession = useMutation(api.workoutSessions.getOrCreate);
   const deleteWorkoutSession = useMutation(
     api.workoutSessions.deleteWorkoutSession
   );
+  const completeMutation = useMutation(api.workoutSessions.complete);
+  const createExerciseSet = useMutation(api.exerciseSets.create);
+  const exerciseSets = useQuery(
+    api.exerciseSets.getSets,
+    workoutSessionId
+      ? {
+          workoutSessionId,
+        }
+      : "skip"
+  );
   const [selectExerciseDialogOpen, setSelectExerciseDialogOpen] =
     useState(false);
+
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (workoutSessionId || !open) return;
@@ -56,16 +64,34 @@ export function WorkoutDrawer() {
   }, [open, createWorkoutSession, workoutSessionId]);
 
   useEffect(() => {
-    // If there are no exercises on unmounting then delete the workout session
+    // If there are no exercises when the component unmounts, delete the workout session.
+    // This ensures that accidentally started sessions are not resumed on different days,
+    // which could lead to data confusion and inaccuracies.
     return () => {
-      console.log("unmounting", workoutSessionId);
-      if (!workoutSessionId) return;
-      // TODO: Check if there are any exercises on the workout session
-      // deleteWorkoutSession({ id: workoutSessionId });
+      if (!workoutSessionId || exerciseSets?.length) return;
+      deleteWorkoutSession({ id: workoutSessionId });
     };
-  }, [workoutSessionId, deleteWorkoutSession]);
+  }, [workoutSessionId, deleteWorkoutSession, exerciseSets]);
 
-  console.log("workoutSessionId", workoutSessionId);
+  const handleSelectExercise = async (exerciseId: Id<"exercises">) => {
+    if (!workoutSessionId) return;
+
+    await createExerciseSet({
+      workoutSessionId,
+      exerciseId,
+    });
+    setSelectExerciseDialogOpen(false);
+  };
+
+  const handleDeleteWorkout = async () => {
+    if (!workoutSessionId) return;
+    startTransition(async () => {
+      await deleteWorkoutSession({ id: workoutSessionId });
+      setOpen(false);
+      setDeleteAlertOpen(false);
+      setWorkoutSessionId(null);
+    });
+  };
 
   return (
     <>
@@ -81,194 +107,118 @@ export function WorkoutDrawer() {
             </div>
           </button>
         </DrawerTrigger>
-        <DrawerContent className="h-full">
-          <DrawerHeader>
-            <DrawerTitle>New Workout</DrawerTitle>
-            <DrawerDescription>Description goes here</DrawerDescription>
+        <DrawerContent className="">
+          <DrawerHeader className="space-y-2">
+            <DrawerTitle className="sr-only">New Workout</DrawerTitle>
+            <WeightUnitToggle />
           </DrawerHeader>
-          <div className="container">
-            <p className="my-2 text-sm text-destructive-foreground bg-destructive p-2 px-4 rounded-md">
-              TODO: There needs to be an way to add a split to this without
-              slowing down the flow.
-            </p>
-          </div>
-          <div className="container flex flex-col gap-2 h-full justify-end">
-            <button
-              className="flex justify-between gap-2 rounded border border-dashed p-4"
-              onClick={() => setSelectExerciseDialogOpen(true)}
-            >
-              <p className="font-semibold">Add first exercise</p>
-              <PlusCircle className="text-brand" size={24} />
-            </button>
-          </div>
+          <ScrollArea className="h-[calc(100dvh-200px)]">
+            <div className="container">
+              <p className="my-2 text-sm text-destructive-foreground bg-destructive p-2 px-4 rounded-md">
+                TODO: There needs to be an way to add a split to this without
+                slowing down the flow.
+              </p>
+            </div>
+            <div className="container flex flex-col gap-2 h-full justify-end">
+              {exerciseSets?.map((exerciseSet) => {
+                return (
+                  <div
+                    className={cn(
+                      "border p-4 space-y-4 rounded",
+                      !exerciseSet.isActive && "bg-muted text-muted-foreground"
+                    )}
+                    key={exerciseSet._id}
+                  >
+                    <div className="gap-2 flex justify-between items-center">
+                      <p className="font-semibold">
+                        {exerciseSet.exercise?.name}
+                      </p>
+                      {exerciseSet.isActive ? (
+                        <button title="Delete exercise">
+                          <Trash2 className="text-destructive " />
+                        </button>
+                      ) : (
+                        <button title="Start exercise">
+                          <Edit />
+                        </button>
+                      )}
+                    </div>
+                    <ExerciseSetForm exerciseSetId={exerciseSet._id} />
+                  </div>
+                );
+              })}
+              <button
+                className={cn(
+                  "flex justify-between gap-2 rounded border border-dashed p-4 bg-background",
+                  !workoutSessionId && "opacity-50 cursor-not-allowed"
+                )}
+                onClick={() => setSelectExerciseDialogOpen(true)}
+                disabled={!workoutSessionId}
+              >
+                <p className="font-semibold">
+                  {exerciseSets?.length ? "Add exercise" : "Add first exercise"}
+                </p>
+                <PlusCircle className="text-brand" size={24} />
+              </button>
+            </div>
 
-          <SelectExerciseDrawer
-            open={selectExerciseDialogOpen}
-            onChange={setSelectExerciseDialogOpen}
-          />
+            <SelectExerciseDrawer
+              open={selectExerciseDialogOpen}
+              onChange={setSelectExerciseDialogOpen}
+              onSelect={handleSelectExercise}
+            />
 
-          <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
-            <DrawerClose asChild>
-              <Button variant="outline">
-                <Delete />
-                Cancel
+            <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
+              <AlertDialog
+                open={deleteAlertOpen}
+                onOpenChange={setDeleteAlertOpen}
+              >
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline">Delete Workout</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Workout</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this workout? This action
+                      cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <Button variant="destructive" asChild>
+                      <AlertDialogAction onClick={handleDeleteWorkout}>
+                        Delete
+                      </AlertDialogAction>
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button
+                className="grow"
+                variant="primary"
+                disabled={isPending || !exerciseSets?.length}
+                onClick={async () => {
+                  if (!workoutSessionId || !exerciseSets?.length) return;
+                  startTransition(async () => {
+                    try {
+                      await completeMutation({ workoutSessionId });
+                      setOpen(false);
+                      setWorkoutSessionId(null);
+                    } catch (err) {
+                      console.error("Failed to complete workout", err);
+                      // TODO: Replace with toast/notification
+                    }
+                  });
+                }}
+              >
+                <Save />
+                <span>Save Workout</span>
               </Button>
-            </DrawerClose>
-            <Button className="grow" variant="primary">
-              <Save />
-              <span>Save Workout</span>
-              {/* Timer starts when first exercise is added */}
-              <span>{"(0 min)"}</span>
-            </Button>
-          </DrawerFooter>
+            </DrawerFooter>
+          </ScrollArea>
         </DrawerContent>
       </Drawer>
     </>
-  );
-}
-
-function SelectExerciseDrawer(props: {
-  open: boolean;
-  onChange: Dispatch<SetStateAction<boolean>>;
-}) {
-  const exercises = useQuery(api.exercises.getAll);
-  const [filterValue, setFilterValue] = useState<string>("");
-  const [refinedExercises, setRefinedExercises] =
-    useState<typeof exercises>(exercises);
-
-  useEffect(() => {
-    if (!exercises) return;
-    const filterRefined = exercises.filter((exercise) => {
-      if (!filterValue) return true;
-      return exercise.muscleGroups.some((group) => group.includes(filterValue));
-    });
-
-    setRefinedExercises(filterRefined);
-  }, [exercises, filterValue]);
-
-  return (
-    <DrawerNested open={props.open} onOpenChange={props.onChange}>
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[94dvh]">
-        <DrawerHeader>
-          <DrawerTitle>Select Exercise</DrawerTitle>
-          <DrawerDescription>
-            Select an exercise to add to your workout.
-          </DrawerDescription>
-        </DrawerHeader>
-
-        <div className="px-4 flex-1">
-          <Command>
-            <CommandList className="max-h-[calc(100dvh-260px)]">
-              <CommandEmpty>No exercises found.</CommandEmpty>
-              <CommandGroup>
-                {refinedExercises?.map((exercise) => {
-                  return (
-                    <CommandItem key={exercise._id}>
-                      <div className="p-4 w-full rounded border flex justify-between items-center gap-2">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            {exercise.name}
-                          </div>
-                          <ul className="flex flex-wrap gap-1 text-xs text-muted-foreground max-h-14 overflow-hidden">
-                            {exercise.muscleGroups.map((group) => {
-                              const name = group.split("_").join(" ");
-                              return (
-                                <li
-                                  className="rounded-full bg-muted px-2 py-1"
-                                  key={group}
-                                >
-                                  {name}
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                        <PlusCircle className="text-brand min-w-6" size={24} />
-                      </div>
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
-            </CommandList>
-            <CommandInput
-              wrapperClassName="h-14"
-              placeholder="Search exercises..."
-            />
-          </Command>
-        </div>
-
-        <DrawerFooter className="flex flex-row gap-2 justify-between">
-          <DrawerClose asChild>
-            <Button variant="outline">Close</Button>
-          </DrawerClose>
-          <div className="flex items-center gap-2">
-            {filterValue && (
-              <Button asChild onClick={() => setFilterValue("")} size="sm">
-                <Badge>
-                  {filterValue} <X size={12} />
-                </Badge>
-              </Button>
-            )}
-            <ExerciseFilter value={filterValue} setValue={setFilterValue} />
-          </div>
-        </DrawerFooter>
-      </DrawerContent>
-    </DrawerNested>
-  );
-}
-
-export function ExerciseFilter(props: {
-  value: string;
-  setValue: (value: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  const mainGroups = Object.keys(MUSCLE_GROUPS);
-  const allItems = new Set([...mainGroups, ...getAllMuscleGroups()]);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          title="Filter exercises"
-        >
-          <FilterIcon />
-          <span>Filter</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="p-0" align="end">
-        <Command>
-          <CommandInput placeholder="Search muscle groups..." />
-          <CommandList>
-            <CommandEmpty>No muscle groups found.</CommandEmpty>
-            <CommandGroup>
-              {Array.from(allItems).map((group) => (
-                <CommandItem
-                  key={group}
-                  value={group}
-                  onSelect={(currentValue) => {
-                    props.setValue(
-                      currentValue === props.value ? "" : currentValue
-                    );
-                    setOpen(false);
-                  }}
-                >
-                  {group.split("_").join(" ")}
-                  <CheckIcon
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      props.value === group ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
   );
 }

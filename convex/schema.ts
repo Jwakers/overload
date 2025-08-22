@@ -52,13 +52,30 @@ export default defineSchema({
     userId: v.optional(v.id("users")),
     name: v.string(),
     muscleGroups: v.array(v.union(...ALL_MUSCLE_GROUPS)),
+    equipment: v.optional(
+      v.union(
+        v.literal("cable"),
+        v.literal("machine"),
+        v.literal("barbell"),
+        v.literal("kettlebell"),
+        v.literal("bodyweight"),
+        v.literal("dumbbell"),
+        v.literal("plate"),
+        v.literal("medicine ball"),
+        v.literal("jump rope"),
+        v.literal("resistance band"),
+        v.literal("trx"),
+        v.literal("other")
+      )
+    ),
     isCustom: v.boolean(),
     isActive: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("byUserId", ["userId"])
-    .index("byMuscleGroups", ["muscleGroups"]),
+    .index("byMuscleGroups", ["muscleGroups"])
+    .index("byEquipment", ["equipment"]),
 
   workoutSessions: defineTable({
     userId: v.id("users"),
@@ -75,20 +92,16 @@ export default defineSchema({
     workoutSessionId: v.id("workoutSessions"),
     exerciseId: v.id("exercises"),
     order: v.number(),
-    weight: v.number(),
-    weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
-    isBodyWeight: v.boolean(),
+    isActive: v.boolean(),
     sets: v.array(
       v.object({
         reps: v.number(),
         weight: v.number(),
         weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
         isBodyWeight: v.boolean(),
-        restTime: v.optional(v.number()),
         notes: v.optional(v.string()),
       })
     ),
-    createdAt: v.number(),
   })
     .index("byWorkoutSessionId", ["workoutSessionId"])
     .index("byExerciseId", ["exerciseId"]),

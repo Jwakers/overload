@@ -4,6 +4,10 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 ## 🏋️‍♂️ Development Todo List
 
+### Bugs
+
+- [ ] Signed out users can see the nav and start workouts
+
 ### Phase 1: Project Setup & Dependencies
 
 - [x] **Install Setup**
@@ -51,13 +55,15 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
   - [x] Create exercise library
   - [x] Add new exercises form
-  - [ ] Exercise search and filtering
-  - [ ] Exercise categories (strength, cardio, etc.)
+  - [x] Exercise search and filtering
+  - [x] Exercise categories (strength, cardio, etc.)
 
 - [ ] **Workout Tracking**
 
-  - [ ] Start new workout functionality
-  - [ ] Add exercises to workout
+  - [x] Start new workout functionality
+  - [x] Continue active workout (don't create new)
+  - [x] Add exercises sets to workout
+  - [x] Refactor exercise to have a equipment field (cable, machine, barbell, kettlebell, barbell etc.)
   - [ ] Record sets with weight, reps, RPE
   - [ ] Workout history view
   - [ ] Workout completion flow with summary and notes
@@ -171,6 +177,9 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] Exercises synonyms to make search more effective
 - [ ] Start new workout button should say resume if there is an active workout. The drawer can be closed by accident this allows the user to quickly resume what they were doing
 - [ ] When starting a new workout we should query if there are any other workouts created today and if so offer to resume or create a new one.
+- [ ] Filter by muscle group AND equipment
+- [ ] Improve the muscle group and equipment systems
+- [ ] Enforce only one active workout session (when requesting a new one all others should be set to isActive === false). No user should ever have multiple active sessions
 
 ## 🚀 Recommended Development Order
 
@@ -196,7 +205,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - **Authentication**: Clerk
 - **UI Components**: Shadcn UI
 - **Styling**: Tailwind CSS
-- **Database**: Convex (built on top of PostgreSQL)
+- **Database**: Convex
 
 ## 🎯 Getting Started
 
