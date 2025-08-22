@@ -205,7 +205,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - **Authentication**: Clerk
 - **UI Components**: Shadcn UI
 - **Styling**: Tailwind CSS
-- **Database**: Convex (built on top of PostgreSQL)
+- **Database**: Convex
 
 ## 🎯 Getting Started
 

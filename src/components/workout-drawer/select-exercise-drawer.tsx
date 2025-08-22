@@ -84,7 +84,7 @@ export function SelectExerciseDrawer({
                         <div className="space-y-2 w-full">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold">{exercise.name}</p>
-                            {hasDuplicate ? (
+                            {hasDuplicate && exercise.equipment ? (
                               <p className="text-xs capitalize text-muted-foreground">
                                 ({exercise.equipment})
                               </p>
