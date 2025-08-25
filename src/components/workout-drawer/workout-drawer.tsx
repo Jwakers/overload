@@ -1,12 +1,21 @@
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import { Edit, Plus, PlusCircle, Save } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { startTransition, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+import { DeleteDialog } from "../delete-dialog";
 import { Button } from "../ui/button";
-import { DeleteDialog } from "../ui/delete-dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
 import {
   Drawer,
   DrawerContent,
@@ -32,7 +41,6 @@ export function WorkoutDrawer() {
   const deleteWorkoutSession = useMutation(
     api.workoutSessions.deleteWorkoutSession
   );
-  const completeMutation = useMutation(api.workoutSessions.complete);
   const createExerciseSet = useMutation(api.exerciseSets.create);
   const deleteExerciseSet = useMutation(api.exerciseSets.deleteExerciseSet);
 
@@ -202,32 +210,72 @@ export function WorkoutDrawer() {
                 <Button variant="outline">Delete Workout</Button>
               </DeleteDialog>
 
-              <Button
-                className="grow"
-                variant="primary"
-                disabled={isPending || !exerciseSets?.length}
-                onClick={async () => {
-                  if (!workoutSessionId || !exerciseSets?.length) return;
-                  startTransition(async () => {
-                    try {
-                      await completeMutation({ workoutSessionId });
-                      setOpen(false);
-                      setWorkoutSessionId(null);
-                      toast.success("Workout saved successfully");
-                    } catch (error) {
-                      console.error("Failed to complete workout", error);
-                      toast.error("Failed to save workout. Please try again.");
-                    }
-                  });
-                }}
-              >
-                <Save />
-                <span>Save Workout</span>
-              </Button>
+              <SaveWorkoutDialog
+                isPending={isPending}
+                disabled={!exerciseSets?.length}
+                workoutSessionId={workoutSessionId}
+                onComplete={() => {}}
+              />
             </DrawerFooter>
           </ScrollArea>
         </DrawerContent>
       </Drawer>
     </>
+  );
+}
+
+function SaveWorkoutDialog(props: {
+  isPending: boolean;
+  disabled: boolean;
+  workoutSessionId: Id<"workoutSessions"> | null;
+  onComplete: () => void;
+}) {
+  const { isPending, disabled, workoutSessionId, onComplete } = props;
+  const completeMutation = useMutation(api.workoutSessions.complete);
+
+  const handleSaveWorkout = async () => {
+    if (!workoutSessionId || disabled) return;
+    startTransition(async () => {
+      try {
+        await completeMutation({ workoutSessionId });
+        onComplete();
+        toast.success("Workout saved successfully");
+      } catch (error) {
+        console.error("Failed to complete workout", error);
+        toast.error("Failed to save workout. Please try again.");
+      }
+    });
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          className="grow"
+          variant="primary"
+          disabled={isPending || disabled}
+        >
+          <Save />
+          <span>Save Workout</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Save workout</DialogTitle>
+        </DialogHeader>
+        <DialogContent>
+          <p>Any notes on this workout</p>
+          {/* TODO: add notes section that saves on blur */}
+        </DialogContent>
+        <DialogFooter>
+          <DialogClose>
+            <Button variant="outline">Cancel</Button>
+          </DialogClose>
+          <Button variant="primary" onClick={handleSaveWorkout}>
+            Save workout
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

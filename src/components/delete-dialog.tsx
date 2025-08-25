@@ -9,8 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "./alert-dialog";
-import { Button } from "./button";
+} from "./ui/alert-dialog";
+import { Button } from "./ui/button";
 
 interface DeleteDialogProps {
   disabled?: boolean;

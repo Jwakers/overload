@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+import { DeleteDialog } from "../delete-dialog";
 import { Button } from "../ui/button";
-import { DeleteDialog } from "../ui/delete-dialog";
 import {
   Form,
   FormControl,
