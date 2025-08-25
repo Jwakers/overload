@@ -7,6 +7,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 ### Bugs
 
 - [ ] Signed out users can see the nav and start workouts
+- [ ] Edit exercise button does not work (happened when workout sets were all deleted)
+- [ ] Should not be able to delete sets unless the exercise set isActive
 
 ### Phase 1: Project Setup & Dependencies
 
