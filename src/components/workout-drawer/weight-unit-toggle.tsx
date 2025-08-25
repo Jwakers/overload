@@ -11,20 +11,18 @@ export function WeightUnitToggle() {
   const [isPending, startTransition] = useTransition();
 
   const handleWeightUnitChange = async (unit: "lbs" | "kg") => {
-    startTransition(async () => {
-      try {
-        await updatePreferences({
-          preferences: {
-            defaultWeightUnit: unit,
-          },
-        });
-        toast.success(
-          `Preferences updated. Weight unit changed to ${unit.toUpperCase()}`
-        );
-      } catch (error) {
-        console.error("Failed to update weight unit", error);
-        toast.error("Failed to update weight unit. Please try again.");
-      }
+    // No-op early return to prevent unnecessary writes and UI churn
+    if ((user?.preferences?.defaultWeightUnit ?? "lbs") === unit) return;
+
+    startTransition(() => {
+      toast.promise(
+        updatePreferences({ preferences: { defaultWeightUnit: unit } }),
+        {
+          loading: "Updating preferences…",
+          success: `Preferences updated. Weight unit changed to ${unit.toUpperCase()}`,
+          error: "Failed to update weight unit. Please try again.",
+        }
+      );
     });
   };
 

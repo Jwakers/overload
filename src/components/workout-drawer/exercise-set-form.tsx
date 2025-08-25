@@ -89,37 +89,32 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
       return;
     }
 
-    startTransition(async () => {
-      try {
-        await addSetMutation({
+    startTransition(() => {
+      toast.promise(
+        addSetMutation({
           exerciseSetId,
           weightUnit: user?.preferences?.defaultWeightUnit || DEFAULT_WEIGHT,
-          set: {
-            weight,
-            reps,
-            notes,
+          set: { weight, reps, notes },
+        }),
+        {
+          loading: "Saving set…",
+          success: () => {
+            form.reset();
+            return "Set saved";
           },
-        });
-        form.reset();
-      } catch (error) {
-        console.error("Failed to add set", error);
-        toast.error("Failed to add set. Please try again.");
-      }
+          error: "Failed to add set. Please try again.",
+        }
+      );
     });
   }
 
   const handleDeleteSet = async (setId: string) => {
     startTransition(async () => {
-      try {
-        await deleteSetMutation({
-          exerciseSetId,
-          setId,
-        });
-        toast.success("Set removed");
-      } catch (error) {
-        console.error("Failed to delete set", error);
-        toast.error("Failed to remove set. Please try again.");
-      }
+      toast.promise(deleteSetMutation({ exerciseSetId, setId }), {
+        loading: "Deleting set…",
+        success: () => "Set removed",
+        error: "Failed to remove set. Please try again.",
+      });
     });
   };
 
@@ -253,17 +248,17 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                 type="button"
                 onClick={() => {
                   startTransition(async () => {
-                    try {
-                      await setActiveMutation({
+                    toast.promise(
+                      setActiveMutation({
                         exerciseSetId,
                         isActive: false,
-                      });
-                    } catch (error) {
-                      console.error("Failed to finish exercise", error);
-                      toast.error(
-                        "Failed to finish exercise. Please try again."
-                      );
-                    }
+                      }),
+                      {
+                        loading: "Finishing exercise…",
+                        success: () => "Exercise finished",
+                        error: "Failed to finish exercise. Please try again.",
+                      }
+                    );
                   });
                 }}
               >
