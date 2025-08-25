@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import { Edit, Plus, PlusCircle, Save } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "../ui/button";
@@ -19,7 +20,6 @@ import { ExerciseSetForm } from "./exercise-set-form";
 import { SelectExerciseDrawer } from "./select-exercise-drawer";
 import { WeightUnitToggle } from "./weight-unit-toggle";
 
-// TODO: Add toast and handle errors throughout all workout drawer components
 // TODO: Saving a workout should trigger a confirmation dialog
 //       - This confirmation should also ask if the user has any notes about the workout, which save onBlur to the session
 
@@ -51,33 +51,62 @@ export function WorkoutDrawer() {
 
   useEffect(() => {
     if (workoutSessionId || !open) return;
-    createWorkoutSession().then((id) => setWorkoutSessionId(id));
+
+    const createSession = async () => {
+      try {
+        const id = await createWorkoutSession();
+        setWorkoutSessionId(id);
+      } catch (error) {
+        console.error("Failed to create workout session", error);
+        toast.error("Failed to create workout session. Please try again.");
+        setOpen(false);
+      }
+    };
+
+    createSession();
   }, [open, createWorkoutSession, workoutSessionId]);
 
   const handleSelectExercise = async (exerciseId: Id<"exercises">) => {
     if (!workoutSessionId) return;
 
-    await createExerciseSet({
-      workoutSessionId,
-      exerciseId,
-    });
-    setSelectExerciseDialogOpen(false);
+    try {
+      await createExerciseSet({
+        workoutSessionId,
+        exerciseId,
+      });
+      setSelectExerciseDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to add exercise", error);
+      toast.error("Failed to add exercise. Please try again.");
+    }
   };
 
   const handleDeleteWorkout = async () => {
     if (!workoutSessionId) return;
     startTransition(async () => {
-      await deleteWorkoutSession({ id: workoutSessionId });
-      setOpen(false);
-      setWorkoutSessionId(null);
+      try {
+        await deleteWorkoutSession({ id: workoutSessionId });
+        setOpen(false);
+        setWorkoutSessionId(null);
+        toast.success("Workout deleted successfully");
+      } catch (error) {
+        console.error("Failed to delete workout", error);
+        toast.error("Failed to delete workout. Please try again.");
+      }
     });
   };
 
   const handleDeleteExercise = async (exerciseSetId: Id<"exerciseSets">) => {
     startTransition(async () => {
-      await deleteExerciseSet({
-        exerciseSetId,
-      });
+      try {
+        await deleteExerciseSet({
+          exerciseSetId,
+        });
+        toast.success("Exercise removed from workout");
+      } catch (error) {
+        console.error("Failed to delete exercise", error);
+        toast.error("Failed to remove exercise. Please try again.");
+      }
     });
   };
 
@@ -184,9 +213,10 @@ export function WorkoutDrawer() {
                       await completeMutation({ workoutSessionId });
                       setOpen(false);
                       setWorkoutSessionId(null);
-                    } catch (err) {
-                      console.error("Failed to complete workout", err);
-                      // TODO: Replace with toast/notification
+                      toast.success("Workout saved successfully");
+                    } catch (error) {
+                      console.error("Failed to complete workout", error);
+                      toast.error("Failed to save workout. Please try again.");
                     }
                   });
                 }}

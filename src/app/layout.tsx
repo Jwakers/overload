@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import Footer from "@/components/footer";
 import Navbar from "@/components/navbar";
+import { Toaster } from "@/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
 import { cx } from "class-variance-authority";
 import ConvexClientProvider from "./convex-client-provider";
@@ -42,6 +43,7 @@ export default function RootLayout({
               </div>
               <Footer />
             </div>
+            <Toaster />
           </ConvexClientProvider>
         </ClerkProvider>
       </body>

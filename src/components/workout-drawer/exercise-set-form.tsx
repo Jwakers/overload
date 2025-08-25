@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -89,24 +90,36 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
     }
 
     startTransition(async () => {
-      await addSetMutation({
-        exerciseSetId,
-        weightUnit: user?.preferences?.defaultWeightUnit || DEFAULT_WEIGHT,
-        set: {
-          weight,
-          reps,
-          notes,
-        },
-      });
+      try {
+        await addSetMutation({
+          exerciseSetId,
+          weightUnit: user?.preferences?.defaultWeightUnit || DEFAULT_WEIGHT,
+          set: {
+            weight,
+            reps,
+            notes,
+          },
+        });
+        form.reset();
+      } catch (error) {
+        console.error("Failed to add set", error);
+        toast.error("Failed to add set. Please try again.");
+      }
     });
   }
 
   const handleDeleteSet = async (setId: string) => {
     startTransition(async () => {
-      await deleteSetMutation({
-        exerciseSetId,
-        setId,
-      });
+      try {
+        await deleteSetMutation({
+          exerciseSetId,
+          setId,
+        });
+        toast.success("Set removed");
+      } catch (error) {
+        console.error("Failed to delete set", error);
+        toast.error("Failed to remove set. Please try again.");
+      }
     });
   };
 
@@ -240,10 +253,17 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                 type="button"
                 onClick={() => {
                   startTransition(async () => {
-                    await setActiveMutation({
-                      exerciseSetId,
-                      isActive: false,
-                    });
+                    try {
+                      await setActiveMutation({
+                        exerciseSetId,
+                        isActive: false,
+                      });
+                    } catch (error) {
+                      console.error("Failed to finish exercise", error);
+                      toast.error(
+                        "Failed to finish exercise. Please try again."
+                      );
+                    }
                   });
                 }}
               >
