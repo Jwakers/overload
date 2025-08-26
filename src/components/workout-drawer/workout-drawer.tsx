@@ -31,6 +31,7 @@ import { WeightUnitToggle } from "./weight-unit-toggle";
 
 // TODO: Saving a workout should trigger a confirmation dialog
 //       - This confirmation should also ask if the user has any notes about the workout, which save onBlur to the session
+// NOTE: This is now in a new branch called feature/save-dialog
 
 export function WorkoutDrawer() {
   const [open, setOpen] = useState(false);
@@ -61,14 +62,14 @@ export function WorkoutDrawer() {
     if (workoutSessionId || !open) return;
 
     const createSession = async () => {
-      try {
-        const id = await createWorkoutSession();
-        setWorkoutSessionId(id);
-      } catch (error) {
-        console.error("Failed to create workout session", error);
-        toast.error("Failed to create workout session. Please try again.");
-        setOpen(false);
-      }
+      toast.promise(createWorkoutSession(), {
+        loading: "Creating workout session…",
+        success: (id) => {
+          setWorkoutSessionId(id);
+          return `Workout session created: ${id}`;
+        },
+        error: "Failed to create workout session. Please try again.",
+      });
     };
 
     createSession();
@@ -77,44 +78,44 @@ export function WorkoutDrawer() {
   const handleSelectExercise = async (exerciseId: Id<"exercises">) => {
     if (!workoutSessionId) return;
 
-    try {
-      await createExerciseSet({
+    toast.promise(
+      createExerciseSet({
         workoutSessionId,
         exerciseId,
-      });
-      setSelectExerciseDialogOpen(false);
-    } catch (error) {
-      console.error("Failed to add exercise", error);
-      toast.error("Failed to add exercise. Please try again.");
-    }
+      }),
+      {
+        loading: "Adding exercise…",
+        success: () => {
+          setSelectExerciseDialogOpen(false);
+          return "Exercise added";
+        },
+        error: "Failed to add exercise. Please try again.",
+      }
+    );
   };
 
   const handleDeleteWorkout = async () => {
     if (!workoutSessionId) return;
     startTransition(async () => {
-      try {
-        await deleteWorkoutSession({ id: workoutSessionId });
-        setOpen(false);
-        setWorkoutSessionId(null);
-        toast.success("Workout deleted successfully");
-      } catch (error) {
-        console.error("Failed to delete workout", error);
-        toast.error("Failed to delete workout. Please try again.");
-      }
+      toast.promise(deleteWorkoutSession({ id: workoutSessionId }), {
+        loading: "Deleting workout…",
+        success: () => {
+          setOpen(false);
+          setWorkoutSessionId(null);
+          return "Workout deleted";
+        },
+        error: "Failed to delete workout. Please try again.",
+      });
     });
   };
 
   const handleDeleteExercise = async (exerciseSetId: Id<"exerciseSets">) => {
     startTransition(async () => {
-      try {
-        await deleteExerciseSet({
-          exerciseSetId,
-        });
-        toast.success("Exercise removed from workout");
-      } catch (error) {
-        console.error("Failed to delete exercise", error);
-        toast.error("Failed to remove exercise. Please try again.");
-      }
+      toast.promise(deleteExerciseSet({ exerciseSetId }), {
+        loading: "Deleting exercise…",
+        success: () => "Exercise removed from workout",
+        error: "Failed to remove exercise. Please try again.",
+      });
     });
   };
 
@@ -214,7 +215,10 @@ export function WorkoutDrawer() {
                 isPending={isPending}
                 disabled={!exerciseSets?.length}
                 workoutSessionId={workoutSessionId}
-                onComplete={() => {}}
+                onComplete={() => {
+                  setOpen(false);
+                  setWorkoutSessionId(null);
+                }}
               />
             </DrawerFooter>
           </ScrollArea>
@@ -236,14 +240,14 @@ function SaveWorkoutDialog(props: {
   const handleSaveWorkout = async () => {
     if (!workoutSessionId || disabled) return;
     startTransition(async () => {
-      try {
-        await completeMutation({ workoutSessionId });
-        onComplete();
-        toast.success("Workout saved successfully");
-      } catch (error) {
-        console.error("Failed to complete workout", error);
-        toast.error("Failed to save workout. Please try again.");
-      }
+      toast.promise(completeMutation({ workoutSessionId }), {
+        loading: "Saving workout…",
+        success: () => {
+          onComplete();
+          return "Workout saved";
+        },
+        error: "Failed to save workout. Please try again.",
+      });
     });
   };
 
