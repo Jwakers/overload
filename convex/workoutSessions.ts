@@ -30,7 +30,7 @@ export const getOrCreate = mutation({
     // This helps to avoid creating multiple unfinished sessions by accident
     const workoutSession = await ctx.db
       .query("workoutSessions")
-      .withIndex("byUserIdAndActive", (q) =>
+      .withIndex("by_user_id_and_active", (q) =>
         q.eq("userId", user._id).eq("isActive", true)
       )
       .first();
@@ -64,6 +64,7 @@ export const setActive = mutation({
 export const complete = mutation({
   args: {
     workoutSessionId: v.id("workoutSessions"),
+    notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
@@ -74,9 +75,14 @@ export const complete = mutation({
     if (workoutSession.userId !== user._id)
       throw new Error("You are not allowed to update this workout session");
 
+    if (args.notes && args.notes.length > 1000) {
+      throw new Error("Notes must be less than 1000 characters");
+    }
+
     await ctx.db.patch(workoutSession._id, {
       isActive: false,
       completedAt: Date.now(),
+      notes: args.notes,
     });
   },
 });
@@ -96,7 +102,9 @@ export const deleteWorkoutSession = mutation({
     // Delete all related exercise sets
     const exerciseSets = await ctx.db
       .query("exerciseSets")
-      .withIndex("byWorkoutSessionId", (q) => q.eq("workoutSessionId", args.id))
+      .withIndex("by_workout_session_id", (q) =>
+        q.eq("workoutSessionId", args.id)
+      )
       .collect();
 
     await Promise.all(

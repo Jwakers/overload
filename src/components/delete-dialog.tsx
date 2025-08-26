@@ -9,8 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "./alert-dialog";
-import { Button } from "./button";
+} from "./ui/alert-dialog";
+import { Button } from "./ui/button";
 
 interface DeleteDialogProps {
   disabled?: boolean;
@@ -19,8 +19,6 @@ interface DeleteDialogProps {
   description: string;
   confirmButtonText: string;
   triggerTitle?: string;
-  triggerSize?: "sm" | "default" | "lg";
-  triggerVariant?: "ghost" | "outline" | "destructive";
   children?: React.ReactNode;
 }
 

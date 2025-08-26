@@ -1,11 +1,31 @@
 import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { Edit, Plus, PlusCircle, Save } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useState,
+  useTransition,
+} from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import z from "zod";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+import { DeleteDialog } from "../delete-dialog";
 import { Button } from "../ui/button";
-import { DeleteDialog } from "../ui/delete-dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
 import {
   Drawer,
   DrawerContent,
@@ -14,14 +34,19 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "../ui/drawer";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
 import { ScrollArea } from "../ui/scroll-area";
+import { Textarea } from "../ui/textarea";
 import { ExerciseSetForm } from "./exercise-set-form";
 import { SelectExerciseDrawer } from "./select-exercise-drawer";
 import { WeightUnitToggle } from "./weight-unit-toggle";
-
-// TODO: Add toast and handle errors throughout all workout drawer components
-// TODO: Saving a workout should trigger a confirmation dialog
-//       - This confirmation should also ask if the user has any notes about the workout, which save onBlur to the session
 
 export function WorkoutDrawer() {
   const [open, setOpen] = useState(false);
@@ -32,7 +57,6 @@ export function WorkoutDrawer() {
   const deleteWorkoutSession = useMutation(
     api.workoutSessions.deleteWorkoutSession
   );
-  const completeMutation = useMutation(api.workoutSessions.complete);
   const createExerciseSet = useMutation(api.exerciseSets.create);
   const deleteExerciseSet = useMutation(api.exerciseSets.deleteExerciseSet);
 
@@ -51,32 +75,61 @@ export function WorkoutDrawer() {
 
   useEffect(() => {
     if (workoutSessionId || !open) return;
-    createWorkoutSession().then((id) => setWorkoutSessionId(id));
+
+    const createSession = async () => {
+      toast.promise(createWorkoutSession(), {
+        loading: "Creating workout session…",
+        success: (id) => {
+          setWorkoutSessionId(id);
+          return `Workout session created: ${new Date().toLocaleDateString()}`;
+        },
+        error: "Failed to create workout session. Please try again.",
+      });
+    };
+
+    createSession();
   }, [open, createWorkoutSession, workoutSessionId]);
 
   const handleSelectExercise = async (exerciseId: Id<"exercises">) => {
     if (!workoutSessionId) return;
 
-    await createExerciseSet({
-      workoutSessionId,
-      exerciseId,
-    });
-    setSelectExerciseDialogOpen(false);
+    toast.promise(
+      createExerciseSet({
+        workoutSessionId,
+        exerciseId,
+      }),
+      {
+        loading: "Adding exercise…",
+        success: () => {
+          setSelectExerciseDialogOpen(false);
+          return "Exercise added";
+        },
+        error: "Failed to add exercise. Please try again.",
+      }
+    );
   };
 
   const handleDeleteWorkout = async () => {
     if (!workoutSessionId) return;
     startTransition(async () => {
-      await deleteWorkoutSession({ id: workoutSessionId });
-      setOpen(false);
-      setWorkoutSessionId(null);
+      toast.promise(deleteWorkoutSession({ id: workoutSessionId }), {
+        loading: "Deleting workout…",
+        success: () => {
+          setOpen(false);
+          setWorkoutSessionId(null);
+          return "Workout deleted";
+        },
+        error: "Failed to delete workout. Please try again.",
+      });
     });
   };
 
   const handleDeleteExercise = async (exerciseSetId: Id<"exerciseSets">) => {
     startTransition(async () => {
-      await deleteExerciseSet({
-        exerciseSetId,
+      toast.promise(deleteExerciseSet({ exerciseSetId }), {
+        loading: "Deleting exercise…",
+        success: () => "Exercise removed from workout",
+        error: "Failed to remove exercise. Please try again.",
       });
     });
   };
@@ -173,31 +226,137 @@ export function WorkoutDrawer() {
                 <Button variant="outline">Delete Workout</Button>
               </DeleteDialog>
 
-              <Button
-                className="grow"
-                variant="primary"
-                disabled={isPending || !exerciseSets?.length}
-                onClick={async () => {
-                  if (!workoutSessionId || !exerciseSets?.length) return;
-                  startTransition(async () => {
-                    try {
-                      await completeMutation({ workoutSessionId });
-                      setOpen(false);
-                      setWorkoutSessionId(null);
-                    } catch (err) {
-                      console.error("Failed to complete workout", err);
-                      // TODO: Replace with toast/notification
-                    }
-                  });
+              <SaveWorkoutDialog
+                isPending={isPending}
+                disabled={!exerciseSets?.length}
+                workoutSessionId={workoutSessionId}
+                onComplete={() => {
+                  setOpen(false);
+                  setWorkoutSessionId(null);
                 }}
-              >
-                <Save />
-                <span>Save Workout</span>
-              </Button>
+              />
             </DrawerFooter>
           </ScrollArea>
         </DrawerContent>
       </Drawer>
     </>
+  );
+}
+
+const notesSchema = z.object({
+  notes: z
+    .string()
+    .max(1000, { message: "Notes must be less than 1000 characters" })
+    .optional(),
+});
+
+type NotesFormData = z.infer<typeof notesSchema>;
+
+function SaveWorkoutDialog(props: {
+  isPending: boolean;
+  disabled: boolean;
+  workoutSessionId: Id<"workoutSessions"> | null;
+  onComplete: () => void;
+}) {
+  const { isPending, disabled, workoutSessionId, onComplete } = props;
+  const completeMutation = useMutation(api.workoutSessions.complete);
+  const [open, setOpen] = useState(false);
+
+  const form = useForm<NotesFormData>({
+    resolver: zodResolver(notesSchema),
+    defaultValues: {
+      notes: "",
+    },
+  });
+
+  const handleSaveWorkout = useCallback(
+    async (data: NotesFormData) => {
+      if (!workoutSessionId || disabled) return;
+
+      startTransition(async () => {
+        toast.promise(
+          completeMutation({
+            workoutSessionId,
+            notes: data.notes,
+          }),
+          {
+            loading: "Saving workout…",
+            success: () => {
+              onComplete();
+              setOpen(false);
+              return "Workout saved";
+            },
+            error: "Failed to save workout. Please try again.",
+          }
+        );
+      });
+    },
+    [completeMutation, disabled, onComplete, workoutSessionId]
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          className="grow"
+          variant="primary"
+          disabled={isPending || disabled}
+        >
+          <Save />
+          <span>Save Workout</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Save workout</DialogTitle>
+          <DialogDescription>
+            Save your workout and add any notes about it. Notes can help you
+            inform decisions about your next workout.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSaveWorkout)}
+            className="space-y-4"
+          >
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="notes">Workout Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      id="notes"
+                      placeholder="How did you feel during this workout?"
+                      maxLength={1000}
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Saving..." : "Save workout"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }

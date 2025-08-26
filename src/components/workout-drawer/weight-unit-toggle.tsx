@@ -2,6 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import { useTransition } from "react";
+import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 
 export function WeightUnitToggle() {
@@ -10,12 +11,18 @@ export function WeightUnitToggle() {
   const [isPending, startTransition] = useTransition();
 
   const handleWeightUnitChange = async (unit: "lbs" | "kg") => {
-    startTransition(async () => {
-      await updatePreferences({
-        preferences: {
-          defaultWeightUnit: unit,
-        },
-      });
+    // No-op early return to prevent unnecessary writes and UI churn
+    if ((user?.preferences?.defaultWeightUnit ?? "lbs") === unit) return;
+
+    startTransition(() => {
+      toast.promise(
+        updatePreferences({ preferences: { defaultWeightUnit: unit } }),
+        {
+          loading: "Updating preferences…",
+          success: `Preferences updated. Weight unit changed to ${unit.toUpperCase()}`,
+          error: "Failed to update weight unit. Please try again.",
+        }
+      );
     });
   };
 
