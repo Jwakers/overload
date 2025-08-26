@@ -1,8 +1,17 @@
 import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { Edit, Plus, PlusCircle, Save } from "lucide-react";
-import { startTransition, useEffect, useState, useTransition } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useState,
+  useTransition,
+} from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import z from "zod";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { DeleteDialog } from "../delete-dialog";
@@ -11,6 +20,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -24,14 +34,19 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "../ui/drawer";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
 import { ScrollArea } from "../ui/scroll-area";
+import { Textarea } from "../ui/textarea";
 import { ExerciseSetForm } from "./exercise-set-form";
 import { SelectExerciseDrawer } from "./select-exercise-drawer";
 import { WeightUnitToggle } from "./weight-unit-toggle";
-
-// TODO: Saving a workout should trigger a confirmation dialog
-//       - This confirmation should also ask if the user has any notes about the workout, which save onBlur to the session
-// NOTE: This is now in a new branch called feature/save-dialog
 
 export function WorkoutDrawer() {
   const [open, setOpen] = useState(false);
@@ -66,7 +81,7 @@ export function WorkoutDrawer() {
         loading: "Creating workout session…",
         success: (id) => {
           setWorkoutSessionId(id);
-          return `Workout session created: ${id}`;
+          return `Workout session created: ${new Date().toLocaleDateString()}`;
         },
         error: "Failed to create workout session. Please try again.",
       });
@@ -228,6 +243,15 @@ export function WorkoutDrawer() {
   );
 }
 
+const notesSchema = z.object({
+  notes: z
+    .string()
+    .max(1000, { message: "Notes must be less than 1000 characters" })
+    .optional(),
+});
+
+type NotesFormData = z.infer<typeof notesSchema>;
+
 function SaveWorkoutDialog(props: {
   isPending: boolean;
   disabled: boolean;
@@ -236,23 +260,42 @@ function SaveWorkoutDialog(props: {
 }) {
   const { isPending, disabled, workoutSessionId, onComplete } = props;
   const completeMutation = useMutation(api.workoutSessions.complete);
+  const [open, setOpen] = useState(false);
 
-  const handleSaveWorkout = async () => {
-    if (!workoutSessionId || disabled) return;
-    startTransition(async () => {
-      toast.promise(completeMutation({ workoutSessionId }), {
-        loading: "Saving workout…",
-        success: () => {
-          onComplete();
-          return "Workout saved";
-        },
-        error: "Failed to save workout. Please try again.",
+  const form = useForm<NotesFormData>({
+    resolver: zodResolver(notesSchema),
+    defaultValues: {
+      notes: "",
+    },
+  });
+
+  const handleSaveWorkout = useCallback(
+    async (data: NotesFormData) => {
+      if (!workoutSessionId || disabled) return;
+
+      startTransition(async () => {
+        toast.promise(
+          completeMutation({
+            workoutSessionId,
+            notes: data.notes || "",
+          }),
+          {
+            loading: "Saving workout…",
+            success: () => {
+              onComplete();
+              setOpen(false);
+              return "Workout saved";
+            },
+            error: "Failed to save workout. Please try again.",
+          }
+        );
       });
-    });
-  };
+    },
+    [completeMutation, disabled, onComplete, workoutSessionId]
+  );
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           className="grow"
@@ -266,19 +309,53 @@ function SaveWorkoutDialog(props: {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Save workout</DialogTitle>
+          <DialogDescription>
+            Save your workout and add any notes about it. Notes can help you
+            inform decisions about your next workout.
+          </DialogDescription>
         </DialogHeader>
-        <DialogContent>
-          <p>Any notes on this workout</p>
-          {/* TODO: add notes section that saves on blur */}
-        </DialogContent>
-        <DialogFooter>
-          <DialogClose>
-            <Button variant="outline">Cancel</Button>
-          </DialogClose>
-          <Button variant="primary" onClick={handleSaveWorkout}>
-            Save workout
-          </Button>
-        </DialogFooter>
+
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSaveWorkout)}
+            className="space-y-4"
+          >
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="notes">Workout Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      id="notes"
+                      placeholder="How did you feel during this workout?"
+                      maxLength={1000}
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Saving..." : "Save workout"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

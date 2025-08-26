@@ -64,6 +64,7 @@ export const setActive = mutation({
 export const complete = mutation({
   args: {
     workoutSessionId: v.id("workoutSessions"),
+    notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
@@ -74,9 +75,14 @@ export const complete = mutation({
     if (workoutSession.userId !== user._id)
       throw new Error("You are not allowed to update this workout session");
 
+    if (args.notes && args.notes.length > 1000) {
+      throw new Error("Notes must be less than 1000 characters");
+    }
+
     await ctx.db.patch(workoutSession._id, {
       isActive: false,
       completedAt: Date.now(),
+      notes: args.notes,
     });
   },
 });
