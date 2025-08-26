@@ -53,7 +53,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
   - [x] Implement sign-in/sign-up pages
   - [x] Create protected routes
 
-- [ ] **Exercise Management**
+- [x] **Exercise Management**
 
   - [x] Create exercise library
   - [x] Add new exercises form
@@ -67,9 +67,9 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
   - [x] Add exercises sets to workout
   - [x] Refactor exercise to have a equipment field (cable, machine, barbell, kettlebell, barbell etc.)
   - [ ] Add custom exercises
-  - [ ] Record sets with weight, reps, RPE
+  - [x] Record sets with weight, reps, RPE
   - [ ] Workout history view
-  - [ ] Workout completion flow with summary and notes
+  - [x] Workout completion flow with summary and notes
   - [ ] Quick actions (copy last workout, quick start, continue from template)
   - [ ] Offline data sync for poor connectivity during workouts
   - [ ] Integrated rest timer between sets with customizable defaults

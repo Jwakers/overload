@@ -30,7 +30,7 @@ export const getOrCreate = mutation({
     // This helps to avoid creating multiple unfinished sessions by accident
     const workoutSession = await ctx.db
       .query("workoutSessions")
-      .withIndex("byUserIdAndActive", (q) =>
+      .withIndex("by_user_id_and_active", (q) =>
         q.eq("userId", user._id).eq("isActive", true)
       )
       .first();
@@ -102,7 +102,9 @@ export const deleteWorkoutSession = mutation({
     // Delete all related exercise sets
     const exerciseSets = await ctx.db
       .query("exerciseSets")
-      .withIndex("byWorkoutSessionId", (q) => q.eq("workoutSessionId", args.id))
+      .withIndex("by_workout_session_id", (q) =>
+        q.eq("workoutSessionId", args.id)
+      )
       .collect();
 
     await Promise.all(

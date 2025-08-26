@@ -23,7 +23,7 @@ export const create = mutation({
     }
     const previousSets = await ctx.db
       .query("exerciseSets")
-      .withIndex("byWorkoutSessionId", (q) =>
+      .withIndex("by_workout_session_id", (q) =>
         q.eq("workoutSessionId", args.workoutSessionId)
       )
       .collect();
@@ -70,7 +70,7 @@ export const getSets = query({
   handler: async (ctx, args) => {
     const exerciseSets = await ctx.db
       .query("exerciseSets")
-      .withIndex("byWorkoutSessionId", (q) =>
+      .withIndex("by_workout_session_id", (q) =>
         q.eq("workoutSessionId", args.workoutSessionId)
       )
       .collect();

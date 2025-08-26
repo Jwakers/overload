@@ -24,7 +24,7 @@ export default defineSchema({
         ),
       })
     ),
-  }).index("byExternalId", ["externalId"]),
+  }).index("by_external_id", ["externalId"]),
 
   bodyWeightHistory: defineTable({
     userId: v.id("users"),
@@ -36,8 +36,8 @@ export default defineSchema({
       v.union(v.literal("manual"), v.literal("prompted"), v.literal("workout"))
     ),
   })
-    .index("byUserId", ["userId"])
-    .index("byUserIdAndDate", ["userId", "recordedAt"]),
+    .index("by_user_id", ["userId"])
+    .index("by_user_id_and_date", ["userId", "recordedAt"]),
 
   splits: defineTable({
     userId: v.id("users"),
@@ -46,7 +46,7 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("byUserId", ["userId"]),
+  }).index("by_user_id", ["userId"]),
 
   exercises: defineTable({
     userId: v.optional(v.id("users")),
@@ -73,9 +73,9 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("byUserId", ["userId"])
-    .index("byMuscleGroups", ["muscleGroups"])
-    .index("byEquipment", ["equipment"]),
+    .index("by_user_id", ["userId"])
+    .index("by_muscle_groups", ["muscleGroups"])
+    .index("by_equipment", ["equipment"]),
 
   workoutSessions: defineTable({
     userId: v.id("users"),
@@ -85,8 +85,8 @@ export default defineSchema({
     notes: v.optional(v.string()),
     isActive: v.boolean(),
   })
-    .index("byUserId", ["userId"])
-    .index("byUserIdAndActive", ["userId", "isActive"]),
+    .index("by_user_id", ["userId"])
+    .index("by_user_id_and_active", ["userId", "isActive"]),
 
   exerciseSets: defineTable({
     workoutSessionId: v.id("workoutSessions"),
@@ -104,8 +104,8 @@ export default defineSchema({
       })
     ),
   })
-    .index("byWorkoutSessionId", ["workoutSessionId"])
-    .index("byExerciseId", ["exerciseId"]),
+    .index("by_workout_session_id", ["workoutSessionId"])
+    .index("by_exercise_id", ["exerciseId"]),
 
   exercisePerformance: defineTable({
     userId: v.id("users"),
@@ -124,6 +124,6 @@ export default defineSchema({
     ),
     totalWorkouts: v.number(),
   })
-    .index("byUserIdAndExercise", ["userId", "exerciseId"])
-    .index("byUserId", ["userId"]),
+    .index("by_user_id_and_exercise", ["userId", "exerciseId"])
+    .index("by_user_id", ["userId"]),
 });

@@ -19,8 +19,6 @@ interface DeleteDialogProps {
   description: string;
   confirmButtonText: string;
   triggerTitle?: string;
-  triggerSize?: "sm" | "default" | "lg";
-  triggerVariant?: "ghost" | "outline" | "destructive";
   children?: React.ReactNode;
 }
 

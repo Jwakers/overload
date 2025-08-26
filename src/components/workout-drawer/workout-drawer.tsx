@@ -277,7 +277,7 @@ function SaveWorkoutDialog(props: {
         toast.promise(
           completeMutation({
             workoutSessionId,
-            notes: data.notes || "",
+            notes: data.notes,
           }),
           {
             loading: "Saving workout…",
