@@ -104,8 +104,9 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 - [ ] **Workout Interface**
 
-  - [ ] Create split
-  - [ ] Assign split to workout session
+  - [x] Create split
+  - [x] Assign split to workout session
+  - [ ] Edit a split (can be done on the split page)
   - [ ] Workout timer
   - [ ] Set input forms
   - [ ] Rest timer between sets with customizable defaults

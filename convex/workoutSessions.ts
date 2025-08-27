@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
-import { mutation, MutationCtx } from "./_generated/server";
+import { mutation, MutationCtx, query, QueryCtx } from "./_generated/server";
 import { getCurrentUserOrThrow } from "./users";
 
 const _createWorkoutSession = async (ctx: MutationCtx, userId: Id<"users">) => {
@@ -9,7 +9,21 @@ const _createWorkoutSession = async (ctx: MutationCtx, userId: Id<"users">) => {
     isActive: true,
     startedAt: Date.now(),
   });
+
   return workoutSessionId;
+};
+
+const _assertAccess = async (
+  ctx: QueryCtx,
+  workoutSessionId: Id<"workoutSessions">
+) => {
+  const user = await getCurrentUserOrThrow(ctx);
+  const workoutSession = await ctx.db.get(workoutSessionId);
+  if (!workoutSession) throw new Error("Workout session not found");
+  if (workoutSession.userId !== user._id)
+    throw new Error("You are not allowed to update this workout session");
+
+  return workoutSession;
 };
 
 export const create = mutation({
@@ -19,6 +33,17 @@ export const create = mutation({
     const workoutSessionId = await _createWorkoutSession(ctx, user._id);
 
     return workoutSessionId;
+  },
+});
+
+export const getById = query({
+  args: {
+    id: v.id("workoutSessions"),
+  },
+  handler: async (ctx, args) => {
+    const workoutSession = await _assertAccess(ctx, args.id);
+
+    return workoutSession;
   },
 });
 
@@ -35,11 +60,12 @@ export const getOrCreate = mutation({
       )
       .first();
 
-    if (workoutSession) return workoutSession._id;
+    if (workoutSession)
+      return { workoutSessionId: workoutSession._id, resume: true };
 
     const workoutSessionId = await _createWorkoutSession(ctx, user._id);
 
-    return workoutSessionId;
+    return { workoutSessionId, resume: false };
   },
 });
 
@@ -112,5 +138,20 @@ export const deleteWorkoutSession = mutation({
     );
 
     await ctx.db.delete(workoutSession._id);
+  },
+});
+
+export const updateSplit = mutation({
+  args: {
+    splitId: v.id("splits"),
+    workoutSessionId: v.id("workoutSessions"),
+  },
+  handler: async (ctx, args) => {
+    const workoutSession = await _assertAccess(ctx, args.workoutSessionId);
+
+    const split = await ctx.db.get(args.splitId);
+    if (!split) throw new Error("Split not found");
+
+    await ctx.db.patch(workoutSession._id, { splitId: args.splitId });
   },
 });

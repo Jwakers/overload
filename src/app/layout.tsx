@@ -43,7 +43,7 @@ export default function RootLayout({
               </div>
               <Footer />
             </div>
-            <Toaster />
+            <Toaster className="pointer-events-auto" />
           </ConvexClientProvider>
         </ClerkProvider>
       </body>
