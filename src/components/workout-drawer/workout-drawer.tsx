@@ -1,20 +1,17 @@
+import { MAX_EXERCISES_TO_SHOW } from "@/constants";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "convex/react";
-import { Edit, Plus, PlusCircle, Save } from "lucide-react";
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useState,
-  useTransition,
-} from "react";
+import { useConvex, useMutation, useQuery } from "convex/react";
+import { FunctionReturnType } from "convex/server";
+import { Dumbbell, Edit, Plus, PlusCircle, Save } from "lucide-react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { DeleteDialog } from "../delete-dialog";
+import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -46,19 +43,23 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Textarea } from "../ui/textarea";
 import { ExerciseSetForm } from "./exercise-set-form";
 import { SelectExerciseDrawer } from "./select-exercise-drawer";
+import { SplitSelector } from "./split-selector";
 import { WeightUnitToggle } from "./weight-unit-toggle";
 
 export function WorkoutDrawer() {
   const [open, setOpen] = useState(false);
   const [workoutSessionId, setWorkoutSessionId] =
     useState<Id<"workoutSessions"> | null>(null);
-
-  const createWorkoutSession = useMutation(api.workoutSessions.getOrCreate);
+  const getOrCreateSessionMutation = useMutation(
+    api.workoutSessions.getOrCreate
+  );
   const deleteWorkoutSession = useMutation(
     api.workoutSessions.deleteWorkoutSession
   );
   const createExerciseSet = useMutation(api.exerciseSets.create);
   const deleteExerciseSet = useMutation(api.exerciseSets.deleteExerciseSet);
+  const addExercisesToSplit = useMutation(api.splits.addExercisesToSplit);
+  const convex = useConvex();
 
   const exerciseSets = useQuery(
     api.exerciseSets.getSets,
@@ -68,19 +69,38 @@ export function WorkoutDrawer() {
         }
       : "skip"
   );
+  const workoutSession = useQuery(
+    api.workoutSessions.getById,
+    workoutSessionId
+      ? {
+          id: workoutSessionId,
+        }
+      : "skip"
+  );
+  const split = useQuery(
+    api.splits.getSplitById,
+    workoutSession?.splitId
+      ? {
+          id: workoutSession.splitId,
+        }
+      : "skip"
+  );
+
   const [selectExerciseDialogOpen, setSelectExerciseDialogOpen] =
     useState(false);
-
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (workoutSessionId || !open) return;
 
     const createSession = async () => {
-      toast.promise(createWorkoutSession(), {
-        loading: "Creating workout session…",
-        success: (id) => {
-          setWorkoutSessionId(id);
+      toast.promise(getOrCreateSessionMutation(), {
+        loading: "Getting workout session…",
+        success: ({ workoutSessionId, resume }) => {
+          setWorkoutSessionId(workoutSessionId);
+          if (resume) {
+            return `Resuming workout session`;
+          }
           return `Workout session created: ${new Date().toLocaleDateString()}`;
         },
         error: "Failed to create workout session. Please try again.",
@@ -88,7 +108,34 @@ export function WorkoutDrawer() {
     };
 
     createSession();
-  }, [open, createWorkoutSession, workoutSessionId]);
+  }, [open, getOrCreateSessionMutation, workoutSessionId]);
+
+  const promptAddExerciseToSplit = useCallback(
+    async (exerciseId: Id<"exercises">) => {
+      if (!split) return;
+
+      if (split.exercises.some((ex) => ex._id === exerciseId)) return;
+
+      const exercise = await convex.query(api.exercises.getExerciseById, {
+        exerciseId,
+      });
+
+      if (!exercise) return;
+
+      toast(`Add ${exercise.name} to ${split.name}?`, {
+        action: {
+          label: "Add",
+          onClick: () => {
+            addExercisesToSplit({
+              splitId: split._id,
+              exerciseIds: [exerciseId],
+            });
+          },
+        },
+      });
+    },
+    [split, convex, addExercisesToSplit]
+  );
 
   const handleSelectExercise = async (exerciseId: Id<"exercises">) => {
     if (!workoutSessionId) return;
@@ -102,6 +149,7 @@ export function WorkoutDrawer() {
         loading: "Adding exercise…",
         success: () => {
           setSelectExerciseDialogOpen(false);
+          promptAddExerciseToSplit(exerciseId);
           return "Exercise added";
         },
         error: "Failed to add exercise. Please try again.",
@@ -136,7 +184,7 @@ export function WorkoutDrawer() {
 
   return (
     <>
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer open={open} onOpenChange={setOpen} modal={false}>
         <DrawerTrigger asChild>
           <button
             className="relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1"
@@ -151,15 +199,18 @@ export function WorkoutDrawer() {
         <DrawerContent className="">
           <DrawerHeader className="space-y-2">
             <DrawerTitle className="sr-only">New Workout</DrawerTitle>
-            <WeightUnitToggle />
+            <div className="flex justify-between items-center gap-2">
+              {workoutSessionId && (
+                <SplitSelector
+                  workoutSessionId={workoutSessionId}
+                  selectedSplitId={workoutSession?.splitId}
+                />
+              )}
+              <WeightUnitToggle />
+            </div>
+            <ActiveSplit split={split} />
           </DrawerHeader>
           <ScrollArea className="h-[calc(100dvh-200px)]">
-            <div className="container">
-              <p className="my-2 text-sm text-destructive-foreground bg-destructive p-2 px-4 rounded-md">
-                TODO: There needs to be an way to add a split to this without
-                slowing down the flow.
-              </p>
-            </div>
             <div className="container flex flex-col gap-2 h-full justify-end">
               {exerciseSets?.map((exerciseSet) => {
                 return (
@@ -273,23 +324,21 @@ function SaveWorkoutDialog(props: {
     async (data: NotesFormData) => {
       if (!workoutSessionId || disabled) return;
 
-      startTransition(async () => {
-        toast.promise(
-          completeMutation({
-            workoutSessionId,
-            notes: data.notes,
-          }),
-          {
-            loading: "Saving workout…",
-            success: () => {
-              onComplete();
-              setOpen(false);
-              return "Workout saved";
-            },
-            error: "Failed to save workout. Please try again.",
-          }
-        );
-      });
+      toast.promise(
+        completeMutation({
+          workoutSessionId,
+          notes: data.notes,
+        }),
+        {
+          loading: "Saving workout…",
+          success: () => {
+            onComplete();
+            setOpen(false);
+            return "Workout saved";
+          },
+          error: "Failed to save workout. Please try again.",
+        }
+      );
     },
     [completeMutation, disabled, onComplete, workoutSessionId]
   );
@@ -358,5 +407,44 @@ function SaveWorkoutDialog(props: {
         </Form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ActiveSplit({
+  split,
+}: {
+  split: FunctionReturnType<typeof api.splits.getSplitById> | undefined;
+}) {
+  if (!split) return null;
+
+  const exercisesToShow = split.exercises.slice(0, MAX_EXERCISES_TO_SHOW);
+
+  return (
+    <div className="rounded-lg border bg-muted p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <Dumbbell className="h-4 w-4 text-brand" />
+        <span className="font-medium">{split.name}</span>
+        <Badge
+          variant={split.isActive ? "default" : "secondary"}
+          className="ml-auto"
+        >
+          {split.isActive ? "Active" : "Inactive"}
+        </Badge>
+      </div>
+      {exercisesToShow.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {exercisesToShow.map((exercise) => (
+            <Badge key={exercise._id} variant="outline" className="text-xs">
+              {exercise.name}
+            </Badge>
+          ))}
+          {exercisesToShow.length < split.exercises.length && (
+            <Badge variant="outline" className="text-xs">
+              +{split.exercises.length - exercisesToShow.length} more
+            </Badge>
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }

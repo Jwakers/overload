@@ -42,9 +42,9 @@ export default defineSchema({
   splits: defineTable({
     userId: v.id("users"),
     name: v.string(),
+    description: v.optional(v.string()),
     exercises: v.array(v.id("exercises")),
     isActive: v.boolean(),
-    createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_user_id", ["userId"]),
 
