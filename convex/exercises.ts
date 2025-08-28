@@ -19,7 +19,7 @@ export const getExerciseById = query({
 
     if (!exercise) throw new Error("Exercise not found");
 
-    if (exercise?.isCustom) {
+    if (exercise.isCustom) {
       const user = await getCurrentUserOrThrow(ctx);
 
       if (exercise.userId !== user._id) {

@@ -21,7 +21,7 @@ const _assertAccess = async (
   const workoutSession = await ctx.db.get(workoutSessionId);
   if (!workoutSession) throw new Error("Workout session not found");
   if (workoutSession.userId !== user._id)
-    throw new Error("You are not allowed to update this workout session");
+    throw new Error("You are not allowed to access this workout session");
 
   return workoutSession;
 };
