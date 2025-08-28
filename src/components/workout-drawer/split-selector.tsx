@@ -8,6 +8,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -21,11 +22,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { MAX_EXERCISES_TO_SHOW } from "@/constants";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { DialogTrigger } from "@radix-ui/react-dialog";
 import { useMutation, useQuery } from "convex/react";
-import { FunctionReturnType } from "convex/server";
+import type { FunctionReturnType } from "convex/server";
 import { Calendar, Edit, Plus } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -37,15 +38,15 @@ import { Id } from "../../../convex/_generated/dataModel";
 type SplitSelectorProps = {
   workoutSessionId: Id<"workoutSessions">;
   selectedSplitId: Id<"splits"> | undefined;
-  onSplitSelect?: (splitId: Id<"splits">) => void;
 };
 
 // Form schema for creating splits
 const createSplitSchema = z.object({
   name: z
     .string()
-    .min(1, "Split name is required")
-    .max(100, "Split name must be less than 100 characters"),
+    .trim()
+    .min(3, "Name must be at least 3 characters")
+    .max(50, "Name must be less than 50 characters"),
   description: z
     .string()
     .max(500, "Description must be less than 500 characters")
@@ -53,8 +54,6 @@ const createSplitSchema = z.object({
 });
 
 type CreateSplitFormData = z.infer<typeof createSplitSchema>;
-
-const MAX_EXERCISES_TO_SHOW = 3;
 
 export function SplitSelector({
   workoutSessionId,
@@ -113,8 +112,12 @@ export function SplitSelector({
             <div className="flex flex-wrap gap-1">
               {split.exercises
                 .slice(0, MAX_EXERCISES_TO_SHOW)
-                .map((exercise, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
+                .map((exercise) => (
+                  <Badge
+                    key={exercise._id}
+                    variant="outline"
+                    className="text-xs"
+                  >
                     {exercise.name}
                   </Badge>
                 ))}
@@ -149,12 +152,12 @@ export function SplitSelector({
           onClick={() => setOpen(true)}
           className="h-8 px-3"
         >
-          {selectedSplit ? (
+          {selectedSplitId ? (
             <Edit size={24} className={"text-brand"} />
           ) : (
             <Plus size={24} className={"text-brand"} />
           )}
-          {selectedSplit ? "Change Split" : "Select Split"}
+          {selectedSplitId ? "Change Split" : "Select Split"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
@@ -166,14 +169,14 @@ export function SplitSelector({
         </DialogHeader>
 
         <div className="space-y-4">
-          {splits?.length ? (
+          {splits === undefined ? (
+            <p>Loading splits…</p>
+          ) : splits.length ? (
             <ScrollArea className="h-64">
-              <div className="space-y-2 pr-4">{splits?.map(renderSplit)}</div>
+              <div className="space-y-2 pr-4">{splits.map(renderSplit)}</div>
             </ScrollArea>
           ) : (
-            <p className="">
-              No splits found. Create a new split to get started.
-            </p>
+            <p>No splits found. Create a new split to get started.</p>
           )}
 
           <div className="border-t pt-4">
@@ -201,8 +204,8 @@ function CreateSplitDialog() {
     toast.promise(
       createSplitMutation({
         name: data.name,
-        description: data.description,
-        exercises: [], // Exercises will be assigned automatically for now
+        description: data.description?.trim() || undefined,
+        exercises: [],
       }),
       {
         loading: "Creating split...",

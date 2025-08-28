@@ -1,9 +1,9 @@
 import { v } from "convex/values";
-import { Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import { mutation, query, QueryCtx } from "./_generated/server";
 import { getCurrentUserOrThrow } from "./users";
 
-export const _assertAccess = async (ctx: QueryCtx, splitId: Id<"splits">) => {
+const _assertAccess = async (ctx: QueryCtx, splitId: Id<"splits">) => {
   const user = await getCurrentUserOrThrow(ctx);
   const split = await ctx.db.get(splitId);
   if (!split) throw new Error("Split not found");
@@ -21,6 +21,9 @@ export const getSplits = query({
       .query("splits")
       .withIndex("by_user_id", (q) => q.eq("userId", user._id))
       .collect();
+
+    // Deterministic order (most recent first)
+    splits.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 
     const enrichedSplits = await Promise.all(
       splits.map(async (split) => {

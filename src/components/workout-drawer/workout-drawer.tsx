@@ -1,15 +1,10 @@
+import { MAX_EXERCISES_TO_SHOW } from "@/constants";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { FunctionReturnType } from "convex/server";
 import { Dumbbell, Edit, Plus, PlusCircle, Save } from "lucide-react";
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useState,
-  useTransition,
-} from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
@@ -130,7 +125,7 @@ export function WorkoutDrawer() {
       toast(`Add ${exercise.name} to ${split.name}?`, {
         action: {
           label: "Add",
-          onClick: (e) => {
+          onClick: () => {
             addExercisesToSplit({
               splitId: split._id,
               exerciseIds: [exerciseId],
@@ -329,23 +324,21 @@ function SaveWorkoutDialog(props: {
     async (data: NotesFormData) => {
       if (!workoutSessionId || disabled) return;
 
-      startTransition(async () => {
-        toast.promise(
-          completeMutation({
-            workoutSessionId,
-            notes: data.notes,
-          }),
-          {
-            loading: "Saving workout…",
-            success: () => {
-              onComplete();
-              setOpen(false);
-              return "Workout saved";
-            },
-            error: "Failed to save workout. Please try again.",
-          }
-        );
-      });
+      toast.promise(
+        completeMutation({
+          workoutSessionId,
+          notes: data.notes,
+        }),
+        {
+          loading: "Saving workout…",
+          success: () => {
+            onComplete();
+            setOpen(false);
+            return "Workout saved";
+          },
+          error: "Failed to save workout. Please try again.",
+        }
+      );
     },
     [completeMutation, disabled, onComplete, workoutSessionId]
   );
@@ -417,8 +410,6 @@ function SaveWorkoutDialog(props: {
   );
 }
 
-const MAX_EXERCISES_TO_SHOW = 3;
-
 function ActiveSplit({
   split,
 }: {
@@ -442,8 +433,8 @@ function ActiveSplit({
       </div>
       {exercisesToShow.length > 0 ? (
         <div className="flex flex-wrap gap-1">
-          {exercisesToShow.map((exercise, index) => (
-            <Badge key={index} variant="outline" className="text-xs">
+          {exercisesToShow.map((exercise) => (
+            <Badge key={exercise._id} variant="outline" className="text-xs">
               {exercise.name}
             </Badge>
           ))}

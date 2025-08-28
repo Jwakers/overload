@@ -75,13 +75,7 @@ export const setActive = mutation({
     isActive: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
-    const workoutSession = await ctx.db.get(args.workoutSessionId);
-
-    if (!workoutSession) throw new Error("Workout session not found");
-
-    if (workoutSession.userId !== user._id)
-      throw new Error("You are not allowed to update this workout session");
+    const workoutSession = await _assertAccess(ctx, args.workoutSessionId);
 
     await ctx.db.patch(workoutSession._id, { isActive: args.isActive });
   },
@@ -93,13 +87,7 @@ export const complete = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
-    const workoutSession = await ctx.db.get(args.workoutSessionId);
-
-    if (!workoutSession) throw new Error("Workout session not found");
-
-    if (workoutSession.userId !== user._id)
-      throw new Error("You are not allowed to update this workout session");
+    const workoutSession = await _assertAccess(ctx, args.workoutSessionId);
 
     if (args.notes && args.notes.length > 1000) {
       throw new Error("Notes must be less than 1000 characters");
@@ -118,12 +106,7 @@ export const deleteWorkoutSession = mutation({
     id: v.id("workoutSessions"),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
-    const workoutSession = await ctx.db.get(args.id);
-
-    if (workoutSession?.userId !== user._id) {
-      throw new Error("You are not allowed to delete this workout session");
-    }
+    const workoutSession = await _assertAccess(ctx, args.id);
 
     // Delete all related exercise sets
     const exerciseSets = await ctx.db
@@ -148,9 +131,11 @@ export const updateSplit = mutation({
   },
   handler: async (ctx, args) => {
     const workoutSession = await _assertAccess(ctx, args.workoutSessionId);
-
     const split = await ctx.db.get(args.splitId);
+
     if (!split) throw new Error("Split not found");
+    if (split.userId !== workoutSession.userId)
+      throw new Error("You are not allowed to update this workout session");
 
     await ctx.db.patch(workoutSession._id, { splitId: args.splitId });
   },
