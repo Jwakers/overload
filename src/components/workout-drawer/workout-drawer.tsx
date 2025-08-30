@@ -1,10 +1,17 @@
 import { MAX_EXERCISES_TO_SHOW } from "@/constants";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useConvex, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { FunctionReturnType } from "convex/server";
 import { Dumbbell, Edit, Plus, PlusCircle, Save } from "lucide-react";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
@@ -39,7 +46,6 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
-import { ScrollArea } from "../ui/scroll-area";
 import { Textarea } from "../ui/textarea";
 import { ExerciseSetForm } from "./exercise-set-form";
 import { SelectExerciseDrawer } from "./select-exercise-drawer";
@@ -50,6 +56,7 @@ export function WorkoutDrawer() {
   const [open, setOpen] = useState(false);
   const [workoutSessionId, setWorkoutSessionId] =
     useState<Id<"workoutSessions"> | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const getOrCreateSessionMutation = useMutation(
     api.workoutSessions.getOrCreate
   );
@@ -59,7 +66,7 @@ export function WorkoutDrawer() {
   const createExerciseSet = useMutation(api.exerciseSets.create);
   const deleteExerciseSet = useMutation(api.exerciseSets.deleteExerciseSet);
   const addExercisesToSplit = useMutation(api.splits.addExercisesToSplit);
-  const convex = useConvex();
+  const observer = useRef<MutationObserver | null>(null);
 
   const exerciseSets = useQuery(
     api.exerciseSets.getSets,
@@ -110,51 +117,64 @@ export function WorkoutDrawer() {
     createSession();
   }, [open, getOrCreateSessionMutation, workoutSessionId]);
 
-  const promptAddExerciseToSplit = useCallback(
-    async (exerciseId: Id<"exercises">) => {
-      if (!split) return;
+  useLayoutEffect(() => {
+    // Use MutationObserver to auto-scroll when new exercise sets are added
+    if (!open || observer.current) return;
 
-      if (split.exercises.some((ex) => ex._id === exerciseId)) return;
+    setTimeout(() => {
+      console.log("useEffect", scrollAreaRef.current);
+      if (!scrollAreaRef.current) return;
 
-      const exercise = await convex.query(api.exercises.getExerciseById, {
-        exerciseId,
+      observer.current = new MutationObserver(() => {
+        console.log(scrollAreaRef.current?.scrollTop);
+        if (!scrollAreaRef.current) return;
+        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
       });
 
-      if (!exercise) return;
-
-      toast(`Add ${exercise.name} to ${split.name}?`, {
-        action: {
-          label: "Add",
-          onClick: () => {
-            addExercisesToSplit({
-              splitId: split._id,
-              exerciseIds: [exerciseId],
-            });
-          },
-        },
+      observer.current.observe(scrollAreaRef.current, {
+        childList: true,
+        subtree: true,
       });
-    },
-    [split, convex, addExercisesToSplit]
-  );
+    }, 0);
+
+    return () => observer.current?.disconnect();
+  }, [open]);
+
+  const handleAddExerciseToSplit = (
+    exerciseId: Id<"exercises"> | undefined
+  ) => {
+    if (!split || !exerciseId) return;
+    toast.promise(
+      addExercisesToSplit({
+        splitId: split._id,
+        exerciseIds: [exerciseId],
+      }),
+      {
+        loading: "Adding exercise to split…",
+        success: () => `Exercise added to ${split.name}`,
+        error: "Failed to add exercise to split. Please try again.",
+      }
+    );
+  };
 
   const handleSelectExercise = async (exerciseId: Id<"exercises">) => {
     if (!workoutSessionId) return;
-
-    toast.promise(
-      createExerciseSet({
-        workoutSessionId,
-        exerciseId,
-      }),
-      {
-        loading: "Adding exercise…",
-        success: () => {
-          setSelectExerciseDialogOpen(false);
-          promptAddExerciseToSplit(exerciseId);
-          return "Exercise added";
-        },
-        error: "Failed to add exercise. Please try again.",
-      }
-    );
+    startTransition(async () => {
+      toast.promise(
+        createExerciseSet({
+          workoutSessionId,
+          exerciseId,
+        }),
+        {
+          loading: "Adding exercise…",
+          success: () => {
+            setSelectExerciseDialogOpen(false);
+            return "Exercise added";
+          },
+          error: "Failed to add exercise. Please try again.",
+        }
+      );
+    });
   };
 
   const handleDeleteWorkout = async () => {
@@ -184,7 +204,7 @@ export function WorkoutDrawer() {
 
   return (
     <>
-      <Drawer open={open} onOpenChange={setOpen} modal={false}>
+      <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
           <button
             className="relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1"
@@ -196,7 +216,7 @@ export function WorkoutDrawer() {
             </div>
           </button>
         </DrawerTrigger>
-        <DrawerContent className="">
+        <DrawerContent className="grid grid-rows-[auto_auto_1fr]">
           <DrawerHeader className="space-y-2">
             <DrawerTitle className="sr-only">New Workout</DrawerTitle>
             <div className="flex justify-between items-center gap-2">
@@ -210,9 +230,16 @@ export function WorkoutDrawer() {
             </div>
             <ActiveSplit split={split} />
           </DrawerHeader>
-          <ScrollArea className="h-[calc(100dvh-200px)]">
-            <div className="container flex flex-col gap-2 h-full justify-end">
+          <div
+            ref={scrollAreaRef}
+            className="container relative overflow-y-auto space-y-4"
+          >
+            <div className="flex flex-col gap-2">
               {exerciseSets?.map((exerciseSet) => {
+                const renderSplitPrompt = !split?.exercises.some(
+                  (ex) => ex._id === exerciseSet.exercise?._id
+                );
+
                 return (
                   <div
                     className={cn(
@@ -221,6 +248,25 @@ export function WorkoutDrawer() {
                     )}
                     key={exerciseSet._id}
                   >
+                    {/* Banner to add this exercise to a split */}
+                    {renderSplitPrompt ? (
+                      <div className="bg-muted text-sm p-2 rounded flex gap-2 justify-between items-center">
+                        <p>
+                          Add this exercise to split:{" "}
+                          <span className="font-semibold">{split?.name}</span>?
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={isPending}
+                          onClick={() =>
+                            handleAddExerciseToSplit(exerciseSet.exercise?._id)
+                          }
+                        >
+                          {isPending ? "Adding..." : "Add"}
+                        </Button>
+                      </div>
+                    ) : null}
                     <div className="gap-2 flex justify-between items-center">
                       <p className="font-semibold">
                         {exerciseSet.exercise?.name}
@@ -246,6 +292,8 @@ export function WorkoutDrawer() {
                   </div>
                 );
               })}
+            </div>
+            <div className="flex flex-col gap-2 sticky bottom-0 bg-background">
               <button
                 className={cn(
                   "flex justify-between gap-2 rounded border border-dashed p-4 bg-background",
@@ -259,35 +307,35 @@ export function WorkoutDrawer() {
                 </p>
                 <PlusCircle className="text-brand" size={24} />
               </button>
-            </div>
 
-            <SelectExerciseDrawer
-              open={selectExerciseDialogOpen}
-              onChange={setSelectExerciseDialogOpen}
-              onSelect={handleSelectExercise}
-            />
-
-            <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
-              <DeleteDialog
-                onConfirm={handleDeleteWorkout}
-                title="Delete Workout"
-                description="Are you sure you want to delete this workout? This action cannot be undone."
-                confirmButtonText="Delete"
-              >
-                <Button variant="outline">Delete Workout</Button>
-              </DeleteDialog>
-
-              <SaveWorkoutDialog
-                isPending={isPending}
-                disabled={!exerciseSets?.length}
-                workoutSessionId={workoutSessionId}
-                onComplete={() => {
-                  setOpen(false);
-                  setWorkoutSessionId(null);
-                }}
+              <SelectExerciseDrawer
+                open={selectExerciseDialogOpen}
+                onChange={setSelectExerciseDialogOpen}
+                onSelect={handleSelectExercise}
               />
-            </DrawerFooter>
-          </ScrollArea>
+
+              <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
+                <DeleteDialog
+                  onConfirm={handleDeleteWorkout}
+                  title="Delete Workout"
+                  description="Are you sure you want to delete this workout? This action cannot be undone."
+                  confirmButtonText="Delete"
+                >
+                  <Button variant="outline">Delete Workout</Button>
+                </DeleteDialog>
+
+                <SaveWorkoutDialog
+                  isPending={isPending}
+                  disabled={!exerciseSets?.length}
+                  workoutSessionId={workoutSessionId}
+                  onComplete={() => {
+                    setOpen(false);
+                    setWorkoutSessionId(null);
+                  }}
+                />
+              </DrawerFooter>
+            </div>
+          </div>
         </DrawerContent>
       </Drawer>
     </>

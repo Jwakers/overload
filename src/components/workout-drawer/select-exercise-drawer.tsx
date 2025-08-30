@@ -1,6 +1,13 @@
 import { useQuery } from "convex/react";
 import { PlusCircle, X } from "lucide-react";
-import { Dispatch, SetStateAction, useMemo, useState } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Badge } from "../ui/badge";
@@ -37,6 +44,9 @@ export function SelectExerciseDrawer({
 }: SelectExerciseDrawerProps) {
   const exercises = useQuery(api.exercises.getAll);
   const [filterValue, setFilterValue] = useState<string>("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [searchValue, setSearchValue] = useState<string>("");
   const refinedExercises = useMemo(() => {
     if (!exercises) return exercises;
     const fv = filterValue?.toLowerCase();
@@ -57,9 +67,22 @@ export function SelectExerciseDrawer({
     );
   }, [refinedExercises]);
 
+  useEffect(() => {
+    // Scroll to top when filter or search value changes
+    if (!scrollContainerRef.current) return;
+    scrollContainerRef.current.scrollTop = 0;
+  }, [filterValue, searchValue]);
+
+  useEffect(() => {
+    if (!open) return;
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+  }, [open]);
+
   return (
     <DrawerNested open={open} onOpenChange={onChange}>
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[94dvh]">
+      <DrawerContent className="grid grid-rows-[auto_auto_1fr]">
         <DrawerHeader>
           <DrawerTitle>Select Exercise</DrawerTitle>
           <DrawerDescription>
@@ -67,9 +90,9 @@ export function SelectExerciseDrawer({
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="px-4 flex-1">
+        <div className="px-4 relative overflow-y-auto">
           <Command>
-            <CommandList className="max-h-[calc(100dvh-280px)]">
+            <CommandList className="max-h-full" ref={scrollContainerRef}>
               <CommandEmpty>No exercises found.</CommandEmpty>
               <CommandGroup>
                 {refinedExercises?.map((exercise) => {
@@ -111,28 +134,40 @@ export function SelectExerciseDrawer({
                 })}
               </CommandGroup>
             </CommandList>
-            <CommandInput
-              wrapperClassName="h-14"
-              placeholder="Search exercises..."
-            />
+            <DrawerFooter className="space-y-2 sticky bottom-0">
+              <CommandInput
+                ref={inputRef}
+                onChangeCapture={(e) =>
+                  setSearchValue((e.target as HTMLInputElement).value)
+                }
+                wrapperClassName="h-14 border-t"
+                placeholder="Search exercises..."
+              />
+              <div className="flex flex-row gap-2 justify-between">
+                <DrawerClose asChild>
+                  <Button variant="outline">Close</Button>
+                </DrawerClose>
+                <div className="flex items-center gap-2">
+                  {filterValue && (
+                    <Button
+                      asChild
+                      onClick={() => setFilterValue("")}
+                      size="sm"
+                    >
+                      <Badge className="capitalize">
+                        {filterValue.split("_").join(" ")} <X size={12} />
+                      </Badge>
+                    </Button>
+                  )}
+                  <ExerciseFilter
+                    value={filterValue}
+                    setValue={setFilterValue}
+                  />
+                </div>
+              </div>
+            </DrawerFooter>
           </Command>
         </div>
-
-        <DrawerFooter className="flex flex-row gap-2 justify-between">
-          <DrawerClose asChild>
-            <Button variant="outline">Close</Button>
-          </DrawerClose>
-          <div className="flex items-center gap-2">
-            {filterValue && (
-              <Button asChild onClick={() => setFilterValue("")} size="sm">
-                <Badge className="capitalize">
-                  {filterValue.split("_").join(" ")} <X size={12} />
-                </Badge>
-              </Button>
-            )}
-            <ExerciseFilter value={filterValue} setValue={setFilterValue} />
-          </div>
-        </DrawerFooter>
       </DrawerContent>
     </DrawerNested>
   );

@@ -99,7 +99,8 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
         {
           loading: "Saving set…",
           success: () => {
-            form.reset();
+            form.resetField("reps");
+            form.resetField("notes");
             return "Set saved";
           },
           error: "Failed to add set. Please try again.",
