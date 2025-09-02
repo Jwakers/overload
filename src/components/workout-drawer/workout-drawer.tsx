@@ -4,14 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { FunctionReturnType } from "convex/server";
 import { Dumbbell, Edit, Plus, PlusCircle, Save } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
@@ -117,28 +110,11 @@ export function WorkoutDrawer() {
     createSession();
   }, [open, getOrCreateSessionMutation, workoutSessionId]);
 
-  useLayoutEffect(() => {
-    // Use MutationObserver to auto-scroll when new exercise sets are added
-    if (!open || observer.current) return;
-
-    setTimeout(() => {
-      console.log("useEffect", scrollAreaRef.current);
-      if (!scrollAreaRef.current) return;
-
-      observer.current = new MutationObserver(() => {
-        console.log(scrollAreaRef.current?.scrollTop);
-        if (!scrollAreaRef.current) return;
-        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-      });
-
-      observer.current.observe(scrollAreaRef.current, {
-        childList: true,
-        subtree: true,
-      });
-    }, 0);
-
-    return () => observer.current?.disconnect();
-  }, [open]);
+  useEffect(() => {
+    if (!open || !scrollAreaRef.current) return;
+    // Scroll on open and whenever a new set appears
+    scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+  }, [open, exerciseSets?.length]);
 
   const handleAddExerciseToSplit = (
     exerciseId: Id<"exercises"> | undefined

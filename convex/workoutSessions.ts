@@ -101,6 +101,9 @@ export const getListWithExercises = query({
           )
           .collect();
 
+        // Ensure deterministic order in the UI
+        exerciseSets.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
         // Get exercise details for each set
         const enrichedSets = await Promise.all(
           exerciseSets.map(async (set) => {
