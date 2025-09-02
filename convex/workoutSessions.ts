@@ -69,6 +69,70 @@ export const getOrCreate = mutation({
   },
 });
 
+export const getList = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const workoutSessions = await ctx.db
+      .query("workoutSessions")
+      .withIndex("by_user_id", (q) => q.eq("userId", user._id))
+      .collect();
+    return workoutSessions;
+  },
+});
+
+export const getListWithExercises = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const workoutSessions = await ctx.db
+      .query("workoutSessions")
+      .withIndex("by_user_id", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .collect();
+
+    const enrichedSessions = await Promise.all(
+      workoutSessions.map(async (session) => {
+        // Get exercise sets for this workout session
+        const exerciseSets = await ctx.db
+          .query("exerciseSets")
+          .withIndex("by_workout_session_id", (q) =>
+            q.eq("workoutSessionId", session._id)
+          )
+          .collect();
+
+        // Ensure deterministic order in the UI
+        exerciseSets.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+        // Get exercise details for each set
+        const enrichedSets = await Promise.all(
+          exerciseSets.map(async (set) => {
+            const exercise = await ctx.db.get(set.exerciseId);
+            return {
+              ...set,
+              exercise,
+            };
+          })
+        );
+
+        // Get split details if available
+        let split = null;
+        if (session.splitId) {
+          split = await ctx.db.get(session.splitId);
+        }
+
+        return {
+          ...session,
+          exerciseSets: enrichedSets,
+          split,
+        };
+      })
+    );
+
+    return enrichedSessions;
+  },
+});
+
 export const setActive = mutation({
   args: {
     workoutSessionId: v.id("workoutSessions"),
