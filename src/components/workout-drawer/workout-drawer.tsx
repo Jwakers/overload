@@ -314,7 +314,7 @@ export function WorkoutDrawer() {
                 onSelect={handleSelectExercise}
               />
 
-              <DrawerFooter className="flex flex-row gap-2 max-w-xl mx-auto w-full">
+              <DrawerFooter className="flex justify-between gap-2 w-full px-0">
                 <DeleteDialog
                   onConfirm={handleDeleteWorkout}
                   title="Delete Workout"
