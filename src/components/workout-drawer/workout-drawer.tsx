@@ -3,7 +3,14 @@ import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { FunctionReturnType } from "convex/server";
-import { Dumbbell, Edit, Plus, PlusCircle, Save } from "lucide-react";
+import {
+  Dumbbell,
+  DumbbellIcon,
+  Edit,
+  Plus,
+  Save,
+  TrashIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -59,7 +66,6 @@ export function WorkoutDrawer() {
   const createExerciseSet = useMutation(api.exerciseSets.create);
   const deleteExerciseSet = useMutation(api.exerciseSets.deleteExerciseSet);
   const addExercisesToSplit = useMutation(api.splits.addExercisesToSplit);
-  const observer = useRef<MutationObserver | null>(null);
 
   const exerciseSets = useQuery(
     api.exerciseSets.getSets,
@@ -192,7 +198,7 @@ export function WorkoutDrawer() {
             </div>
           </button>
         </DrawerTrigger>
-        <DrawerContent className="grid grid-rows-[auto_auto_1fr]">
+        <DrawerContent className="grid grid-rows-[auto_auto_1fr] max-h-[98dvh] h-full">
           <DrawerHeader className="space-y-2">
             <DrawerTitle className="sr-only">New Workout</DrawerTitle>
             <div className="flex justify-between items-center gap-2">
@@ -204,12 +210,12 @@ export function WorkoutDrawer() {
               )}
               <WeightUnitToggle />
             </div>
-            <ActiveSplit split={split} />
           </DrawerHeader>
           <div
             ref={scrollAreaRef}
             className="container relative overflow-y-auto space-y-4"
           >
+            <ActiveSplit split={split} />
             <div className="flex flex-col gap-2">
               {exerciseSets?.map((exerciseSet) => {
                 const renderSplitPrompt = !split?.exercises.some(
@@ -269,47 +275,55 @@ export function WorkoutDrawer() {
                 );
               })}
             </div>
-            <div className="flex flex-col gap-2 sticky bottom-0 bg-background">
-              <button
-                className={cn(
-                  "flex justify-between gap-2 rounded border border-dashed p-4 bg-background",
-                  !workoutSessionId && "opacity-50 cursor-not-allowed"
-                )}
-                onClick={() => setSelectExerciseDialogOpen(true)}
-                disabled={!workoutSessionId}
-              >
-                <p className="font-semibold">
-                  {exerciseSets?.length ? "Add exercise" : "Add first exercise"}
-                </p>
-                <PlusCircle className="text-brand" size={24} />
-              </button>
-
+            <div className="flex flex-col gap-2 bg-background">
               <SelectExerciseDrawer
                 open={selectExerciseDialogOpen}
                 onChange={setSelectExerciseDialogOpen}
                 onSelect={handleSelectExercise}
               />
 
-              <DrawerFooter className="flex justify-between gap-2 w-full px-0">
-                <DeleteDialog
-                  onConfirm={handleDeleteWorkout}
-                  title="Delete Workout"
-                  description="Are you sure you want to delete this workout? This action cannot be undone."
-                  confirmButtonText="Delete"
-                >
-                  <Button variant="outline">Delete Workout</Button>
-                </DeleteDialog>
+              <div className="h-19">
+                <DrawerFooter className="fixed bottom-0 inset-x-0 flex items-center justify-between gap-2 w-full px-2">
+                  <div className="flex items-center gap-2">
+                    <DeleteDialog
+                      onConfirm={handleDeleteWorkout}
+                      title="Delete Workout"
+                      description="Are you sure you want to delete this workout? This action cannot be undone."
+                      confirmButtonText="Delete"
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Delete Workout"
+                      >
+                        <TrashIcon size={18} className="text-destructive" />
+                      </Button>
+                    </DeleteDialog>
 
-                <SaveWorkoutDialog
-                  isPending={isPending}
-                  disabled={!exerciseSets?.length}
-                  workoutSessionId={workoutSessionId}
-                  onComplete={() => {
-                    setOpen(false);
-                    setWorkoutSessionId(null);
-                  }}
-                />
-              </DrawerFooter>
+                    <SaveWorkoutDialog
+                      isPending={isPending}
+                      disabled={!exerciseSets?.length}
+                      workoutSessionId={workoutSessionId}
+                      onComplete={() => {
+                        setOpen(false);
+                        setWorkoutSessionId(null);
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className={cn(
+                      "bg-brand text-brand-foreground flex items-center gap-2 p-3 rounded-full shadow",
+                      !workoutSessionId && "opacity-50 cursor-not-allowed"
+                    )}
+                    onClick={() => setSelectExerciseDialogOpen(true)}
+                    disabled={!workoutSessionId}
+                  >
+                    <DumbbellIcon size={18} />
+                    <p className="text-sm font-semibold">Add exercise</p>
+                  </button>
+                </DrawerFooter>
+              </div>
             </div>
           </div>
         </DrawerContent>
@@ -371,12 +385,12 @@ function SaveWorkoutDialog(props: {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-          className="grow"
-          variant="primary"
+          className="rounded-full"
+          size="icon"
           disabled={isPending || disabled}
+          title="Save Workout"
         >
           <Save />
-          <span>Save Workout</span>
         </Button>
       </DialogTrigger>
       <DialogContent>
