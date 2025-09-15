@@ -218,9 +218,11 @@ export function WorkoutDrawer() {
             <ActiveSplit split={split} />
             <div className="flex flex-col gap-2">
               {exerciseSets?.map((exerciseSet) => {
-                const renderSplitPrompt = !split?.exercises.some(
-                  (ex) => ex._id === exerciseSet.exercise?._id
-                );
+                const renderSplitPrompt =
+                  split &&
+                  !split?.exercises.some(
+                    (ex) => ex._id === exerciseSet.exercise?._id
+                  );
 
                 return (
                   <div
@@ -274,58 +276,49 @@ export function WorkoutDrawer() {
                   </div>
                 );
               })}
-            </div>
-            <div className="flex flex-col gap-2 bg-background">
-              <SelectExerciseDrawer
-                open={selectExerciseDialogOpen}
-                onChange={setSelectExerciseDialogOpen}
-                onSelect={handleSelectExercise}
-              />
-
-              <div className="h-19">
-                <DrawerFooter className="fixed bottom-0 inset-x-0 flex items-center justify-between gap-2 w-full px-2">
-                  <div className="flex items-center gap-2">
-                    <DeleteDialog
-                      onConfirm={handleDeleteWorkout}
-                      title="Delete Workout"
-                      description="Are you sure you want to delete this workout? This action cannot be undone."
-                      confirmButtonText="Delete"
-                    >
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="Delete Workout"
-                      >
-                        <TrashIcon size={18} className="text-destructive" />
-                      </Button>
-                    </DeleteDialog>
-
-                    <SaveWorkoutDialog
-                      isPending={isPending}
-                      disabled={!exerciseSets?.length}
-                      workoutSessionId={workoutSessionId}
-                      onComplete={() => {
-                        setOpen(false);
-                        setWorkoutSessionId(null);
-                      }}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    className={cn(
-                      "bg-brand text-brand-foreground flex items-center gap-2 p-3 rounded-full shadow",
-                      !workoutSessionId && "opacity-50 cursor-not-allowed"
-                    )}
-                    onClick={() => setSelectExerciseDialogOpen(true)}
-                    disabled={!workoutSessionId}
+              <DrawerFooter className="sticky bottom-0 inset-x-0 flex items-center justify-between gap-2 w-full px-2">
+                <div className="flex items-center gap-2">
+                  <DeleteDialog
+                    onConfirm={handleDeleteWorkout}
+                    title="Delete Workout"
+                    description="Are you sure you want to delete this workout? This action cannot be undone."
+                    confirmButtonText="Delete"
                   >
-                    <DumbbellIcon size={18} />
-                    <p className="text-sm font-semibold">Add exercise</p>
-                  </button>
-                </DrawerFooter>
-              </div>
+                    <Button variant="ghost" size="icon" title="Delete Workout">
+                      <TrashIcon size={18} className="text-destructive" />
+                    </Button>
+                  </DeleteDialog>
+
+                  <SaveWorkoutDialog
+                    isPending={isPending}
+                    disabled={!exerciseSets?.length}
+                    workoutSessionId={workoutSessionId}
+                    onComplete={() => {
+                      setOpen(false);
+                      setWorkoutSessionId(null);
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className={cn(
+                    "bg-brand text-brand-foreground flex items-center gap-2 p-3 rounded-full shadow",
+                    !workoutSessionId && "opacity-50 cursor-not-allowed"
+                  )}
+                  onClick={() => setSelectExerciseDialogOpen(true)}
+                  disabled={!workoutSessionId}
+                >
+                  <DumbbellIcon size={18} />
+                  <p className="text-sm font-semibold">Add exercise</p>
+                </button>
+              </DrawerFooter>
             </div>
           </div>
+          <SelectExerciseDrawer
+            open={selectExerciseDialogOpen}
+            onChange={setSelectExerciseDialogOpen}
+            onSelect={handleSelectExercise}
+          />
         </DrawerContent>
       </Drawer>
     </>

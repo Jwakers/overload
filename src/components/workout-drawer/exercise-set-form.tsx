@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { Check, Plus } from "lucide-react";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -62,14 +62,6 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
   const [showNotes, setShowNotes] = useState(false);
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleShowNotes = () => {
-    setShowNotes(true);
-    // Focus the textarea after it's rendered
-    setTimeout(() => {
-      notesTextareaRef.current?.focus();
-    }, 0);
-  };
-
   const form = useForm<ExerciseSetFormData>({
     resolver: zodResolver(exerciseSetSchema),
     defaultValues: {
@@ -101,11 +93,13 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
     }
 
     startTransition(() => {
+      const cleanedNotes = notes?.trim();
+
       toast.promise(
         addSetMutation({
           exerciseSetId,
           weightUnit: user?.preferences?.defaultWeightUnit || DEFAULT_WEIGHT,
-          set: { weight, reps, notes },
+          set: { weight, reps, notes: cleanedNotes || undefined },
         }),
         {
           loading: "Saving set…",
@@ -131,6 +125,10 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
     });
   };
 
+  useEffect(() => {
+    if (showNotes) notesTextareaRef.current?.focus();
+  }, [showNotes]);
+
   return (
     <div className="space-y-3">
       {exerciseSet ? (
@@ -146,7 +144,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
             </TableHeader>
             <TableBody>
               {exerciseSet.sets.map((set, i) => (
-                <TableRow key={exerciseSet._id + i}>
+                <TableRow key={set.id}>
                   <TableCell className="font-medium">{i + 1}</TableCell>
                   <TableCell>
                     {set.weight}
@@ -239,6 +237,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                 disabled={isPending}
                 className="size-8 rounded-full"
                 title="Save set"
+                aria-label="Save set"
               >
                 <Check className="h-4 w-4" />
               </Button>
@@ -250,7 +249,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={handleShowNotes}
+                  onClick={() => setShowNotes(true)}
                   className="self-end"
                 >
                   Add notes to this set
