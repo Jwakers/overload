@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
-import { useTransition } from "react";
+import { Check, Plus } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -58,6 +59,8 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
   const deleteSetMutation = useMutation(api.exerciseSets.deleteSet);
 
   const [isPending, startTransition] = useTransition();
+  const [showNotes, setShowNotes] = useState(false);
+  const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const form = useForm<ExerciseSetFormData>({
     resolver: zodResolver(exerciseSetSchema),
@@ -90,17 +93,20 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
     }
 
     startTransition(() => {
+      const cleanedNotes = notes?.trim();
+
       toast.promise(
         addSetMutation({
           exerciseSetId,
           weightUnit: user?.preferences?.defaultWeightUnit || DEFAULT_WEIGHT,
-          set: { weight, reps, notes },
+          set: { weight, reps, notes: cleanedNotes || undefined },
         }),
         {
           loading: "Saving set…",
           success: () => {
             form.resetField("reps");
             form.resetField("notes");
+            setShowNotes(false);
             return "Set saved";
           },
           error: "Failed to add set. Please try again.",
@@ -119,6 +125,10 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
     });
   };
 
+  useEffect(() => {
+    if (showNotes) notesTextareaRef.current?.focus();
+  }, [showNotes]);
+
   return (
     <div className="space-y-3">
       {exerciseSet ? (
@@ -134,7 +144,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
             </TableHeader>
             <TableBody>
               {exerciseSet.sets.map((set, i) => (
-                <TableRow key={exerciseSet._id + i}>
+                <TableRow key={set.id}>
                   <TableCell className="font-medium">{i + 1}</TableCell>
                   <TableCell>
                     {set.weight}
@@ -161,7 +171,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="grid grid-cols-[auto_1fr_1fr] gap-4"
+            className="grid grid-cols-[auto_1fr_1fr_auto] gap-4"
           >
             <div className="text-lg  grow flex items-center">
               {exerciseSet?.sets.length ? exerciseSet.sets.length + 1 : 1}
@@ -219,32 +229,62 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
               />
             </div>
 
-            <div className="flex flex-col gap-2 col-start-2 col-span-2">
-              <FormField
-                control={form.control}
-                name="notes"
-                disabled={isPending}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="sr-only">Notes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Notes (optional)"
-                        maxLength={255}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    <div className="text-xs text-muted-foreground text-right">
-                      {field.value?.length || 0}/255
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="flex gap-2 col-start-1 col-span-3 justify-end">
+            <div className="flex items-center">
               <Button
-                variant="outline"
+                type="submit"
+                size="icon"
+                variant="primary"
+                disabled={isPending}
+                className="size-8 rounded-full"
+                title="Save set"
+                aria-label="Save set"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex flex-col gap-2 col-start-2 col-span-3">
+              {!showNotes ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowNotes(true)}
+                  className="self-end"
+                >
+                  Add notes to this set
+                  <Plus />
+                </Button>
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  disabled={isPending}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="sr-only">Notes</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Notes (optional)"
+                          maxLength={255}
+                          {...field}
+                          ref={(e) => {
+                            field.ref(e);
+                            notesTextareaRef.current = e;
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      <div className="text-xs text-muted-foreground text-right">
+                        {field.value?.length || 0}/255
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+            <div className="flex gap-2 col-start-1 col-span-4 justify-end">
+              <Button
                 disabled={isPending || !exerciseSet?.sets.length}
                 type="button"
                 onClick={() => {
@@ -264,10 +304,6 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                 }}
               >
                 Finish exercise
-              </Button>
-
-              <Button type="submit" disabled={isPending}>
-                Save set
               </Button>
             </div>
           </form>
