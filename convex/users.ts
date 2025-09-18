@@ -79,19 +79,6 @@ export const update = mutation({
     bodyWeight: v.optional(v.number()),
     bodyWeightUnit: v.optional(v.union(v.literal("lbs"), v.literal("kg"))),
     lastBodyWeightUpdate: v.optional(v.number()),
-    preferences: v.optional(
-      v.object({
-        defaultWeightUnit: v.union(v.literal("lbs"), v.literal("kg")),
-        defaultRestTime: v.optional(v.number()),
-        weightTrackingFrequency: v.optional(
-          v.union(
-            v.literal("weekly"),
-            v.literal("monthly"),
-            v.literal("manual")
-          )
-        ),
-      })
-    ),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
@@ -102,12 +89,6 @@ export const update = mutation({
       }),
       ...(args.lastBodyWeightUpdate !== undefined && {
         lastBodyWeightUpdate: args.lastBodyWeightUpdate,
-      }),
-      ...(args.preferences && {
-        preferences: {
-          ...user.preferences,
-          ...args.preferences,
-        },
       }),
     });
   },

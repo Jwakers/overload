@@ -55,6 +55,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] Icon on Iphone is not working
 - [ ] Make sure service worker updates are handled
 - [ ] Set up a cron or background job to check for stale pushSubscriptions and delete them
+- [ ] Send notifications with convex actions instead of server actions
 - [ ] Test on production deployment
 - [ ] Set up a system that sends specifically me an inspirational quote every day at the same time through the app to celebrate the PWA milestone
 
