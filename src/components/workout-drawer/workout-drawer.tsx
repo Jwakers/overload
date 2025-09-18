@@ -386,7 +386,7 @@ function SaveWorkoutDialog(props: {
           <Save />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent autoFocus={false}>
         <DialogHeader>
           <DialogTitle>Save workout</DialogTitle>
           <DialogDescription>

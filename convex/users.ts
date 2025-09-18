@@ -74,6 +74,45 @@ async function userByExternalId(ctx: QueryCtx, externalId: string) {
     .unique();
 }
 
+export const update = mutation({
+  args: {
+    bodyWeight: v.optional(v.number()),
+    bodyWeightUnit: v.optional(v.union(v.literal("lbs"), v.literal("kg"))),
+    lastBodyWeightUpdate: v.optional(v.number()),
+    preferences: v.optional(
+      v.object({
+        defaultWeightUnit: v.union(v.literal("lbs"), v.literal("kg")),
+        defaultRestTime: v.optional(v.number()),
+        weightTrackingFrequency: v.optional(
+          v.union(
+            v.literal("weekly"),
+            v.literal("monthly"),
+            v.literal("manual")
+          )
+        ),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    await ctx.db.patch(user._id, {
+      ...(args.bodyWeight !== undefined && { bodyWeight: args.bodyWeight }),
+      ...(args.bodyWeightUnit !== undefined && {
+        bodyWeightUnit: args.bodyWeightUnit,
+      }),
+      ...(args.lastBodyWeightUpdate !== undefined && {
+        lastBodyWeightUpdate: args.lastBodyWeightUpdate,
+      }),
+      ...(args.preferences && {
+        preferences: {
+          ...user.preferences,
+          ...args.preferences,
+        },
+      }),
+    });
+  },
+});
+
 export const updatePreferences = mutation({
   args: {
     preferences: v.object({

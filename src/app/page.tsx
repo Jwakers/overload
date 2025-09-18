@@ -1,3 +1,4 @@
+import InstallPrompt from "@/components/install-prompt";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants";
 import { ArrowRight, BarChart3, Dumbbell, TrendingUp } from "lucide-react";
@@ -71,6 +72,8 @@ export default function HomePage() {
             </p>
           </div>
         </div>
+
+        <InstallPrompt />
       </div>
     </main>
   );

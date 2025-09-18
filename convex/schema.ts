@@ -126,4 +126,18 @@ export default defineSchema({
   })
     .index("by_user_id_and_exercise", ["userId", "exerciseId"])
     .index("by_user_id", ["userId"]),
+
+  pushSubscriptions: defineTable({
+    userId: v.id("users"),
+    endpoint: v.string(),
+    p256dh: v.string(),
+    auth: v.string(),
+    userAgent: v.optional(v.string()),
+    isActive: v.boolean(),
+    updatedAt: v.number(),
+    lastUsedAt: v.optional(v.number()),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_endpoint", ["endpoint"])
+    .index("by_user_id_and_active", ["userId", "isActive"]),
 });
