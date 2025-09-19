@@ -32,20 +32,24 @@ self.addEventListener("push", (event) => {
         payload = event.data ? event.data.json() : {};
       } catch {
         // Fallback if payload isn't JSON
-        payload = { title: "Overload", body: event.data?.text?.() ?? "" };
+        payload = { title: "Overload", body: event.data?.text() ?? "" };
       }
-      const title = (payload.title as string) || "Overload";
+      const title = payload.title || "Overload";
       const options = {
-        body: (payload.body as string) || "You have a new notification.",
-        icon: (payload.icon as string) || "/web-app-manifest-192x192.png",
-        badge: (payload.badge as string) || "/web-app-manifest-192x192.png",
-        vibrate: (payload.vibrate as number[]) || [100, 50, 100],
+        body: payload.body || "You have a new notification.",
+        icon: payload.icon || "/web-app-manifest-192x192.png",
+        badge: payload.badge || "/web-app-manifest-192x192.png",
+        vibrate: payload.vibrate || [100, 50, 100],
         data: {
-          ...((payload.data as Record<string, unknown>) || {}),
-          url: (payload.url as string) || "/",
+          ...(payload.data || {}),
+          url: payload.url || "/",
           dateOfArrival: Date.now(),
         },
-      };
+      } as unknown as NotificationOptions;
+      if (typeof title !== "string") {
+        throw new Error("Title is not a string");
+      }
+
       return self.registration.showNotification(title, options);
     })()
   );

@@ -55,9 +55,6 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Add section in settings
 - [x] Install and refactor with serwist
 - [ ] Set up a landing page and app.etc subdomain for all app functionality
-- [ ] Push notifications should be a banner if disabled
-- [ ] Icon on Iphone is not working
-- [ ] Make sure service worker updates are handled
 - [ ] Set up a cron or background job to check for stale pushSubscriptions and delete them
 - [ ] Send notifications with convex actions instead of server actions
 - [ ] Test on production deployment
