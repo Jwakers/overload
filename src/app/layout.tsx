@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   description: APP_DESCRIPTION,
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: APP_DEFAULT_TITLE,
     // startUpImage: [],
   },
@@ -60,7 +60,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FFFFFF",
+  themeColor: "#000000",
+  initialScale: 1,
+  viewportFit: "cover",
+  width: "device-width",
 };
 
 export default function RootLayout({
@@ -75,7 +78,7 @@ export default function RootLayout({
       >
         <ClerkProvider>
           <ConvexClientProvider>
-            <div className="relative min-h-screen grid grid-rows-[1fr_auto_auto]">
+            <div className="relative min-h-screen grid grid-rows-[1fr_auto_auto] safe-area-inset">
               <div data-vaul-drawer-wrapper="true">{children}</div>
               <div className="sticky bottom-0">
                 <Navbar />

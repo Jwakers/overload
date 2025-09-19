@@ -7,6 +7,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 ### Bugs
 
 - [x] Remove cardio exercises from the exercise library
+- [x] On Iphone we need the UI to avoid the notch at the bottom of the screen
 - [ ] Clicking toasts close the drawers
 - [ ] Signed out users can see the nav and start workouts
 - [ ] Edit exercise button does not work (happened when workout sets were all deleted)
@@ -15,7 +16,6 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] No way to sign out
 - [ ] Toast descriptions are too light for example when used for push notification toasts
 - [ ] Notifications section in settings. Green tick is squashed on Iphone
-- [ ] On Iphone we need the UI to avoid the notch at the bottom of the screen
 
 ### Phase 1: Project Setup & Dependencies
 
