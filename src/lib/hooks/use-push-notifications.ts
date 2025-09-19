@@ -27,25 +27,11 @@ export default function usePushNotification() {
     if (!user) return;
     if ("serviceWorker" in navigator && "PushManager" in window) {
       setIsSupported(true);
-      registerServiceWorker();
     }
 
     // Check current notification permission
     if ("Notification" in window) {
       setPermission(Notification.permission);
-    }
-
-    async function registerServiceWorker() {
-      // If already registered, this resolves to the active registration.
-      const registration = await navigator.serviceWorker
-        .register("/sw.js", {
-          scope: "/",
-          updateViaCache: "none",
-        })
-        .catch(() => navigator.serviceWorker.ready);
-
-      const sub = await registration.pushManager.getSubscription();
-      setSubscription(sub);
     }
   }, [user]);
 

@@ -14,6 +14,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] Add exercise to split banner shows when no split is selected
 - [ ] No way to sign out
 - [ ] Toast descriptions are too light for example when used for push notification toasts
+- [ ] Notifications section in settings. Green tick is squashed on Iphone
+- [ ] On Iphone we need the UI to avoid the notch at the bottom of the screen
 
 ### Phase 1: Project Setup & Dependencies
 
@@ -51,7 +53,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 - [x] Do necessary PWA setup as per: https://nextjs.org/docs/app/guides/progressive-web-apps
 - [x] Add section in settings
-- [ ] Install and refactor with serwist
+- [x] Install and refactor with serwist
 - [ ] Set up a landing page and app.etc subdomain for all app functionality
 - [ ] Push notifications should be a banner if disabled
 - [ ] Icon on Iphone is not working
