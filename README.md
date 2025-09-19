@@ -128,6 +128,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
   - [ ] Rest timer between sets with customizable defaults
   - [ ] Workout completion flow with summary view
   - [ ] Quick action buttons for common workflows
+  - [ ] Add optimistic updates for faster UX ([see convex docs](https://docs.convex.dev/client/react/optimistic-updates))
   - [ ] Offline indicator and sync status
 
 - [ ] **Data Visualization**

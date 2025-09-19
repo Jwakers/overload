@@ -11,6 +11,13 @@ export const createSubscription = mutation({
     userAgent: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    if (!args.endpoint.startsWith("https://") || args.endpoint.length > 2048) {
+      throw new Error("Invalid subscription endpoint.");
+    }
+    if (args.p256dh.length > 256 || args.auth.length > 64) {
+      throw new Error("Invalid subscription keys.");
+    }
+
     const user = await getCurrentUserOrThrow(ctx);
 
     const matches = await ctx.db
@@ -19,12 +26,13 @@ export const createSubscription = mutation({
       .collect();
 
     const owned = matches.find((s) => s.userId === user._id);
+    const now = Date.now();
 
     if (owned) {
       await ctx.db.patch(owned._id, {
         ...args,
-        updatedAt: Date.now(),
-        lastUsedAt: Date.now(),
+        updatedAt: now,
+        lastUsedAt: now,
         isActive: true,
       });
 
@@ -32,20 +40,35 @@ export const createSubscription = mutation({
       await Promise.all(
         matches
           .filter((s) => s._id !== owned._id)
-          .map((s) =>
-            ctx.db.patch(s._id, { isActive: false, updatedAt: Date.now() })
-          )
+          .map((s) => ctx.db.patch(s._id, { isActive: false, updatedAt: now }))
       );
       return owned._id;
     }
 
-    // Endpoint exists but is associated with other user(s) — deactivate stale ones.
+    // If the endpoint exists for another user, only reassign if keys match.
     if (matches.length) {
-      await Promise.all(
-        matches.map((s) =>
-          ctx.db.patch(s._id, { isActive: false, updatedAt: Date.now() })
-        )
+      const sameKeys = matches.find(
+        (s) => s.p256dh === args.p256dh && s.auth === args.auth
       );
+      if (sameKeys && sameKeys.userId !== user._id) {
+        await ctx.db.patch(sameKeys._id, {
+          userId: user._id,
+          isActive: true,
+          updatedAt: now,
+          lastUsedAt: now,
+          userAgent: args.userAgent,
+        });
+        // Deactivate other duplicates for this endpoint.
+        await Promise.all(
+          matches
+            .filter((s) => s._id !== sameKeys._id)
+            .map((s) =>
+              ctx.db.patch(s._id, { isActive: false, updatedAt: now })
+            )
+        );
+        return sameKeys._id;
+      }
+      // If keys don't match, do not touch other users' subscriptions.
     }
 
     // Create new subscription
@@ -56,8 +79,8 @@ export const createSubscription = mutation({
       auth: args.auth,
       userAgent: args.userAgent,
       isActive: true,
-      updatedAt: Date.now(),
-      lastUsedAt: Date.now(),
+      updatedAt: now,
+      lastUsedAt: now,
     });
 
     return subscriptionId;
@@ -68,12 +91,15 @@ export const getUserSubscriptions = query({
   args: {},
   handler: async (ctx) => {
     const user = await getCurrentUserOrThrow(ctx);
-    return await ctx.db
+    const subscriptions = await ctx.db
       .query("pushSubscriptions")
       .withIndex("by_user_id_and_active", (q) =>
         q.eq("userId", user._id).eq("isActive", true)
       )
       .collect();
+    return subscriptions.map(({ p256dh, auth, ...rest }) => {
+      return rest;
+    });
   },
 });
 

@@ -41,7 +41,6 @@ export default function SettingsPage() {
       updateBodyWeight({
         bodyWeight: parsed,
         bodyWeightUnit: weightUnit,
-        source: "manual",
       }),
       {
         loading: "Updating weight…",
@@ -122,6 +121,8 @@ export default function SettingsPage() {
                       onChange={(e) => setWeight(e.target.value)}
                       placeholder="Enter weight"
                       className="flex-1"
+                      min={0}
+                      inputMode="numeric"
                     />
                     <select
                       value={weightUnit}
@@ -140,6 +141,7 @@ export default function SettingsPage() {
                       disabled={isUpdatingWeight}
                       size="sm"
                       className="bg-success hover:bg-success/90"
+                      aria-label="Save body weight"
                     >
                       <Save className="w-4 h-4" />
                     </Button>
@@ -158,7 +160,7 @@ export default function SettingsPage() {
                       <Weight className="w-4 h-4 text-muted-foreground" />
                       <span className="text-foreground">
                         {user.bodyWeight
-                          ? `${user.bodyWeight} ${user.bodyWeightUnit || "lbs"}`
+                          ? `${user.bodyWeight} ${user.bodyWeightUnit ?? "lbs"}`
                           : "Not set"}
                       </span>
                     </div>
@@ -166,6 +168,7 @@ export default function SettingsPage() {
                       onClick={() => setIsEditingWeight(true)}
                       variant="outline"
                       size="sm"
+                      aria-label="Edit body weight"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -184,7 +187,7 @@ export default function SettingsPage() {
                     Default Weight Unit
                   </span>
                   <Badge variant="secondary">
-                    {user.preferences?.defaultWeightUnit || "lbs"}
+                    {user.preferences?.defaultWeightUnit ?? "lbs"}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-muted/50 border border-border rounded-md">
@@ -192,7 +195,7 @@ export default function SettingsPage() {
                     Default Rest Time
                   </span>
                   <Badge variant="secondary">
-                    {user.preferences?.defaultRestTime || 60}s
+                    {user.preferences?.defaultRestTime ?? 60}s
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-muted/50 border border-border rounded-md">
@@ -200,7 +203,7 @@ export default function SettingsPage() {
                     Weight Tracking
                   </span>
                   <Badge variant="secondary">
-                    {user.preferences?.weightTrackingFrequency || "manual"}
+                    {user.preferences?.weightTrackingFrequency ?? "manual"}
                   </Badge>
                 </div>
               </div>

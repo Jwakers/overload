@@ -32,9 +32,6 @@ export default defineSchema({
     weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
     recordedAt: v.number(),
     note: v.optional(v.string()),
-    source: v.optional(
-      v.union(v.literal("manual"), v.literal("prompted"), v.literal("workout"))
-    ),
   })
     .index("by_user_id", ["userId"])
     .index("by_user_id_and_date", ["userId", "recordedAt"]),

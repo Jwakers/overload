@@ -79,9 +79,6 @@ export const updateBodyWeight = mutation({
     bodyWeight: v.number(),
     bodyWeightUnit: v.union(v.literal("lbs"), v.literal("kg")),
     note: v.optional(v.string()),
-    source: v.optional(
-      v.union(v.literal("manual"), v.literal("prompted"), v.literal("workout"))
-    ),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
@@ -107,7 +104,6 @@ export const updateBodyWeight = mutation({
       weightUnit: args.bodyWeightUnit,
       recordedAt: now,
       note: args.note,
-      source: args.source || "manual",
     });
   },
 });

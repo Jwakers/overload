@@ -31,8 +31,8 @@ export async function sendNotification(
       JSON.stringify({
         title,
         body: message,
-        icon: "/favicon.ico",
-        badge: "/favicon.ico",
+        icon: "/web-app-manifest-192x192.png",
+        badge: "/web-app-manifest-192x192.png",
       })
     );
     return { success: true };
