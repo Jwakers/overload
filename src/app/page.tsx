@@ -1,8 +1,12 @@
-import InstallPrompt from "@/components/install-prompt";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants";
 import { ArrowRight, BarChart3, Dumbbell, TrendingUp } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+
+const InstallPrompt = dynamic(() => import("@/components/install-prompt"), {
+  ssr: false,
+});
 
 export default function HomePage() {
   return (

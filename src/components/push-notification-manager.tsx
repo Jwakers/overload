@@ -22,7 +22,11 @@ export function PushNotificationManager() {
     const message = formData.get("message") as string;
     if (!subscription) throw new Error("No subscription found");
 
-    sendNotification(JSON.parse(JSON.stringify(subscription)), "test", message);
+    const serialised = subscription.toJSON() as unknown as {
+      endpoint: string;
+      keys: { p256dh: string; auth: string };
+    };
+    sendNotification(serialised, "test", message);
   }
 
   if (!isSupported) {

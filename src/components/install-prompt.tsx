@@ -5,6 +5,11 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
+
 export default function InstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -14,9 +19,10 @@ export default function InstallPrompt() {
   } | null>(null);
 
   useEffect(() => {
+    const ua = navigator.userAgent;
     const isIOSDevice =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-      !(window as unknown as { MSStream?: unknown }).MSStream;
+      /iPad|iPhone|iPod/.test(ua) ||
+      (ua.includes("Mac") && "ontouchend" in window);
     const isStandaloneMode = window.matchMedia(
       "(display-mode: standalone)"
     ).matches;
@@ -27,12 +33,8 @@ export default function InstallPrompt() {
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(
-        e as unknown as {
-          prompt: () => Promise<void>;
-          userChoice: Promise<{ outcome: string }>;
-        }
-      );
+      const bip = e as unknown as BeforeInstallPromptEvent;
+      setDeferredPrompt(bip);
     };
 
     // For non-iOS devices, show install prompt even without beforeinstallprompt
@@ -81,7 +83,8 @@ export default function InstallPrompt() {
           onClick: () => {
             window.open(
               "https://support.google.com/chrome/answer/9658361",
-              "_blank"
+              "_blank",
+              "noopener,noreferrer"
             );
           },
         },

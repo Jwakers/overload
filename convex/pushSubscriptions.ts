@@ -12,21 +12,40 @@ export const createSubscription = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
-    // Check if subscription already exists
-    const existing = await ctx.db
+
+    const matches = await ctx.db
       .query("pushSubscriptions")
       .withIndex("by_endpoint", (q) => q.eq("endpoint", args.endpoint))
-      .first();
+      .collect();
 
-    if (existing && existing.userId === user._id) {
-      // Update existing subscription
-      await ctx.db.patch(existing._id, {
+    const owned = matches.find((s) => s.userId === user._id);
+
+    if (owned) {
+      await ctx.db.patch(owned._id, {
         ...args,
         updatedAt: Date.now(),
         lastUsedAt: Date.now(),
         isActive: true,
       });
-      return existing._id;
+
+      // Deactivate any stale duplicates.
+      await Promise.all(
+        matches
+          .filter((s) => s._id !== owned._id)
+          .map((s) =>
+            ctx.db.patch(s._id, { isActive: false, updatedAt: Date.now() })
+          )
+      );
+      return owned._id;
+    }
+
+    // Endpoint exists but is associated with other user(s) — deactivate stale ones.
+    if (matches.length) {
+      await Promise.all(
+        matches.map((s) =>
+          ctx.db.patch(s._id, { isActive: false, updatedAt: Date.now() })
+        )
+      );
     }
 
     // Create new subscription
@@ -51,7 +70,9 @@ export const getUserSubscriptions = query({
     const user = await getCurrentUserOrThrow(ctx);
     return await ctx.db
       .query("pushSubscriptions")
-      .withIndex("by_user_id", (q) => q.eq("userId", user._id))
+      .withIndex("by_user_id_and_active", (q) =>
+        q.eq("userId", user._id).eq("isActive", true)
+      )
       .collect();
   },
 });
@@ -63,19 +84,15 @@ export const deleteSubscription = mutation({
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
 
-    // Find subscription by endpoint
-    const existing = await ctx.db
+    const matches = await ctx.db
       .query("pushSubscriptions")
       .withIndex("by_endpoint", (q) => q.eq("endpoint", args.endpoint))
-      .first();
+      .collect();
 
-    if (existing && existing.userId === user._id) {
-      await ctx.db.delete(existing._id);
-      return { success: true };
-    }
-
-    return { success: false, error: "Subscription not found" };
+    await Promise.all(
+      matches
+        .filter((s) => s.userId === user._id)
+        .map((s) => ctx.db.delete(s._id))
+    );
   },
 });
-
-// updateLastUsed mutation removed - not needed for server actions approach

@@ -8,51 +8,70 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useMutation, useQuery } from "convex/react";
 import { Bell, Edit, Save, User, Weight } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 
 export default function SettingsPage() {
   const user = useQuery(api.users.current);
-  const updateUser = useMutation(api.users.update);
+  const updateBodyWeight = useMutation(api.users.updateBodyWeight);
+  const [isUpdatingWeight, setIsUpdatingWeight] = useState(false);
   const [isEditingWeight, setIsEditingWeight] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const [weight, setWeight] = useState("");
   const [weightUnit, setWeightUnit] = useState<"lbs" | "kg">("lbs");
 
   // Initialize weight from user data
   useEffect(() => {
-    if (user?.bodyWeight) {
+    if (user && typeof user.bodyWeight === "number") {
       setWeight(user.bodyWeight.toString());
       setWeightUnit(user.bodyWeightUnit || "lbs");
     }
   }, [user]);
 
   const handleWeightUpdate = async () => {
-    if (!user || !weight) return;
+    if (!user || weight.trim() === "") return;
+    const parsed = parseFloat(weight);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      toast.error("Please enter a valid weight greater than 0");
+      return;
+    }
 
-    startTransition(async () => {
-      toast.promise(
-        updateUser({
-          bodyWeight: parseFloat(weight),
-          bodyWeightUnit: weightUnit,
-          lastBodyWeightUpdate: Date.now(),
-        }),
-        {
-          loading: "Updating weight…",
-          success: () => "Weight updated successfully",
-          error: "Failed to update weight",
-        }
-      );
-    });
+    setIsUpdatingWeight(true);
+    toast.promise(
+      updateBodyWeight({
+        bodyWeight: parsed,
+        bodyWeightUnit: weightUnit,
+        source: "manual",
+      }),
+      {
+        loading: "Updating weight…",
+        success: () => "Weight updated successfully",
+        error: "Failed to update weight",
+        finally: () => {
+          setIsEditingWeight(false);
+          setIsUpdatingWeight(false);
+        },
+      }
+    );
   };
 
-  if (!user) {
+  if (user === undefined) {
     return (
       <div className="container px-4 py-8">
         <h1 className="text-3xl font-bold text-foreground mb-6">Settings</h1>
         <div className="bg-card border border-border rounded-lg p-6">
           <p className="text-muted-foreground">Loading user information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (user === null) {
+    return (
+      <div className="container px-4 py-8">
+        <h1 className="text-3xl font-bold text-foreground mb-6">Settings</h1>
+        <div className="bg-card border border-border rounded-lg p-6">
+          <p className="text-muted-foreground">You are not signed in.</p>
         </div>
       </div>
     );
@@ -99,14 +118,14 @@ export default function SettingsPage() {
                     <Input
                       type="number"
                       value={weight}
-                      disabled={isPending}
+                      disabled={isUpdatingWeight}
                       onChange={(e) => setWeight(e.target.value)}
                       placeholder="Enter weight"
                       className="flex-1"
                     />
                     <select
                       value={weightUnit}
-                      disabled={isPending}
+                      disabled={isUpdatingWeight}
                       onChange={(e) =>
                         setWeightUnit(e.target.value as "lbs" | "kg")
                       }
@@ -118,7 +137,7 @@ export default function SettingsPage() {
                     </select>
                     <Button
                       onClick={handleWeightUpdate}
-                      disabled={isPending}
+                      disabled={isUpdatingWeight}
                       size="sm"
                       className="bg-success hover:bg-success/90"
                     >
@@ -126,7 +145,7 @@ export default function SettingsPage() {
                     </Button>
                     <Button
                       onClick={() => setIsEditingWeight(false)}
-                      disabled={isPending}
+                      disabled={isUpdatingWeight}
                       variant="outline"
                       size="sm"
                     >

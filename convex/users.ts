@@ -74,22 +74,40 @@ async function userByExternalId(ctx: QueryCtx, externalId: string) {
     .unique();
 }
 
-export const update = mutation({
+export const updateBodyWeight = mutation({
   args: {
-    bodyWeight: v.optional(v.number()),
-    bodyWeightUnit: v.optional(v.union(v.literal("lbs"), v.literal("kg"))),
-    lastBodyWeightUpdate: v.optional(v.number()),
+    bodyWeight: v.number(),
+    bodyWeightUnit: v.union(v.literal("lbs"), v.literal("kg")),
+    note: v.optional(v.string()),
+    source: v.optional(
+      v.union(v.literal("manual"), v.literal("prompted"), v.literal("workout"))
+    ),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
+
+    // Validate body weight
+    if (!Number.isFinite(args.bodyWeight) || args.bodyWeight <= 0) {
+      throw new Error("Invalid body weight.");
+    }
+
+    const now = Date.now();
+
+    // Update user's body weight
     await ctx.db.patch(user._id, {
-      ...(args.bodyWeight !== undefined && { bodyWeight: args.bodyWeight }),
-      ...(args.bodyWeightUnit !== undefined && {
-        bodyWeightUnit: args.bodyWeightUnit,
-      }),
-      ...(args.lastBodyWeightUpdate !== undefined && {
-        lastBodyWeightUpdate: args.lastBodyWeightUpdate,
-      }),
+      bodyWeight: args.bodyWeight,
+      bodyWeightUnit: args.bodyWeightUnit,
+      lastBodyWeightUpdate: now,
+    });
+
+    // Add entry to body weight history
+    await ctx.db.insert("bodyWeightHistory", {
+      userId: user._id,
+      weight: args.bodyWeight,
+      weightUnit: args.bodyWeightUnit,
+      recordedAt: now,
+      note: args.note,
+      source: args.source || "manual",
     });
   },
 });

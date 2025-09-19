@@ -36,10 +36,14 @@ export default function usePushNotification() {
     }
 
     async function registerServiceWorker() {
-      const registration = await navigator.serviceWorker.register("/sw.js", {
-        scope: "/",
-        updateViaCache: "none",
-      });
+      // If already registered, this resolves to the active registration.
+      const registration = await navigator.serviceWorker
+        .register("/sw.js", {
+          scope: "/",
+          updateViaCache: "none",
+        })
+        .catch(() => navigator.serviceWorker.ready);
+
       const sub = await registration.pushManager.getSubscription();
       setSubscription(sub);
     }
@@ -49,12 +53,11 @@ export default function usePushNotification() {
     if (!userSubscriptions) return;
 
     // Find if we have a matching subscription in the database
-    const dbSub = userSubscriptions.find(
-      (sub) => subscription && sub.endpoint === subscription.endpoint
-    );
+    const dbSub = subscription
+      ? userSubscriptions.find((sub) => sub.endpoint === subscription.endpoint)
+      : undefined;
 
-    if (!subscription) return;
-    if (subscription && dbSub) return;
+    if (!subscription || dbSub) return;
 
     const p256dh = subscription.getKey("p256dh");
     const auth = subscription.getKey("auth");
@@ -80,13 +83,21 @@ export default function usePushNotification() {
   async function subscribeToPush() {
     if (!user) return;
     setIsUpdating(true);
+
     try {
+      const p = await requestNotificationPermission();
+      if (p !== "granted")
+        throw new Error("Notification permission not granted");
+
       const registration = await navigator.serviceWorker.ready;
+      const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapid) {
+        toast.error("Missing VAPID public key");
+        return;
+      }
       const sub = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-        ),
+        applicationServerKey: urlBase64ToUint8Array(vapid),
       });
       setSubscription(sub);
     } catch (error) {
@@ -129,7 +140,6 @@ export default function usePushNotification() {
     isUpdating,
     subscribeToPush,
     unsubscribeFromPush,
-    requestNotificationPermission,
   };
 }
 

@@ -51,6 +51,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 - [x] Do necessary PWA setup as per: https://nextjs.org/docs/app/guides/progressive-web-apps
 - [x] Add section in settings
+- [ ] Install and refactor with serwist
+- [ ] Set up a landing page and app.etc subdomain for all app functionality
 - [ ] Push notifications should be a banner if disabled
 - [ ] Icon on Iphone is not working
 - [ ] Make sure service worker updates are handled
