@@ -32,9 +32,6 @@ export default defineSchema({
     weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
     recordedAt: v.number(),
     note: v.optional(v.string()),
-    source: v.optional(
-      v.union(v.literal("manual"), v.literal("prompted"), v.literal("workout"))
-    ),
   })
     .index("by_user_id", ["userId"])
     .index("by_user_id_and_date", ["userId", "recordedAt"]),
@@ -126,4 +123,18 @@ export default defineSchema({
   })
     .index("by_user_id_and_exercise", ["userId", "exerciseId"])
     .index("by_user_id", ["userId"]),
+
+  pushSubscriptions: defineTable({
+    userId: v.id("users"),
+    endpoint: v.string(),
+    p256dh: v.string(),
+    auth: v.string(),
+    userAgent: v.optional(v.string()),
+    isActive: v.boolean(),
+    updatedAt: v.number(),
+    lastUsedAt: v.optional(v.number()),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_endpoint", ["endpoint"])
+    .index("by_user_id_and_active", ["userId", "isActive"]),
 });

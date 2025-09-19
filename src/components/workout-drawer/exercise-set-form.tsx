@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { DeleteDialog } from "../delete-dialog";
 import { Button } from "../ui/button";
 import {
@@ -46,15 +46,33 @@ interface ExerciseSetFormProps {
 }
 
 export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
-  // TODO: Show saved sets above the form
-  // TODO: reset values when the form is submitted
   // TODO: add an is body weight option
   // TODO: When weight unit changes, convert the current weight value to the new unit
   const user = useQuery(api.users.current);
   const exerciseSet = useQuery(api.exerciseSets.get, {
     exerciseSetId,
   });
-  const addSetMutation = useMutation(api.exerciseSets.addSet);
+  const addSetMutation = useMutation(
+    api.exerciseSets.addSet
+  ).withOptimisticUpdate((localStore, args) => {
+    if (!exerciseSet) return;
+    const newSet: Doc<"exerciseSets">["sets"][number] = {
+      id: crypto.randomUUID(),
+      ...args.set,
+      weightUnit: args.weightUnit,
+      isBodyWeight: false,
+    };
+
+    localStore.setQuery(
+      api.exerciseSets.get,
+      { exerciseSetId: exerciseSet._id },
+      {
+        ...exerciseSet,
+        sets: [...exerciseSet.sets, newSet],
+      }
+    );
+  });
+
   const setActiveMutation = useMutation(api.exerciseSets.setActive);
   const deleteSetMutation = useMutation(api.exerciseSets.deleteSet);
 

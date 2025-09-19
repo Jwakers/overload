@@ -12,7 +12,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] Edit exercise button does not work (happened when workout sets were all deleted)
 - [ ] Should not be able to delete sets unless the exercise set isActive
 - [ ] Add exercise to split banner shows when no split is selected
-- [ ] Warn users no split has been selected before saving
+- [ ] No way to sign out
+- [ ] Toast descriptions are too light for example when used for push notification toasts
 
 ### Phase 1: Project Setup & Dependencies
 
@@ -48,7 +49,17 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 ### PWA
 
-- [ ] Do necessary PWA setup as per: https://nextjs.org/docs/app/guides/progressive-web-apps
+- [x] Do necessary PWA setup as per: https://nextjs.org/docs/app/guides/progressive-web-apps
+- [x] Add section in settings
+- [ ] Install and refactor with serwist
+- [ ] Set up a landing page and app.etc subdomain for all app functionality
+- [ ] Push notifications should be a banner if disabled
+- [ ] Icon on Iphone is not working
+- [ ] Make sure service worker updates are handled
+- [ ] Set up a cron or background job to check for stale pushSubscriptions and delete them
+- [ ] Send notifications with convex actions instead of server actions
+- [ ] Test on production deployment
+- [ ] Set up a system that sends specifically me an inspirational quote every day at the same time through the app to celebrate the PWA milestone
 
 ### Phase 3: Core Features
 
@@ -70,6 +81,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
   - [x] Continue active workout (don't create new)
   - [x] Add exercises sets to workout
   - [x] Refactor exercise to have a equipment field (cable, machine, barbell, kettlebell, barbell etc.)
+  - [ ] Warn users no split has been selected before saving
   - [ ] Add custom exercises
   - [x] Record sets with weight, reps, RPE
   - [ ] Workout history view
@@ -116,6 +128,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
   - [ ] Rest timer between sets with customizable defaults
   - [ ] Workout completion flow with summary view
   - [ ] Quick action buttons for common workflows
+  - [ ] Add optimistic updates for faster UX ([see convex docs](https://docs.convex.dev/client/react/optimistic-updates))
   - [ ] Offline indicator and sync status
 
 - [ ] **Data Visualization**
