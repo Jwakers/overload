@@ -114,6 +114,7 @@ export default defineSchema({
     exerciseId: v.id("exercises"),
     lastWeight: v.optional(v.number()),
     lastWeightUnit: v.optional(v.union(v.literal("lbs"), v.literal("kg"))),
+    lastIsBodyWeight: v.optional(v.boolean()),
     lastReps: v.optional(v.number()),
     lastSets: v.optional(v.number()),
     lastWorkoutDate: v.optional(v.number()),
@@ -121,6 +122,7 @@ export default defineSchema({
       v.object({
         weight: v.number(),
         weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
+        isBodyWeight: v.boolean(),
         reps: v.number(),
         date: v.number(),
       })

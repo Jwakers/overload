@@ -111,9 +111,11 @@ export const addSet = mutation({
       args.exerciseSetId
     );
 
-    // Basic validation
-    if (!Number.isFinite(args.set.weight) || args.set.weight < 0) {
-      throw new Error("Weight must be a non-negative number");
+    // Basic validation (only for non‑BW sets; BW uses user.bodyWeight)
+    if (!args.isBodyWeight) {
+      if (!Number.isFinite(args.set.weight) || args.set.weight <= 0) {
+        throw new Error("Weight must be a positive number");
+      }
     }
     if (!Number.isFinite(args.set.reps) || args.set.reps < 1) {
       throw new Error("Reps must be at least 1");
@@ -122,8 +124,14 @@ export const addSet = mutation({
       throw new Error("Notes must be no more than 255 characters");
     }
 
-    if (args.isBodyWeight && !user.bodyWeight === undefined) {
-      throw new Error("Body weight is not set");
+    if (args.isBodyWeight) {
+      if (
+        user.bodyWeight === undefined ||
+        !Number.isFinite(user.bodyWeight) ||
+        user.bodyWeight <= 0
+      ) {
+        throw new Error("Body weight must be set and positive");
+      }
     }
 
     const weightUnit = args.isBodyWeight
@@ -135,8 +143,8 @@ export const addSet = mutation({
       throw new Error("Weight unit is not set");
     }
 
-    if (!weight) {
-      throw new Error("Weight is not set");
+    if (!Number.isFinite(weight) || weight === undefined || weight <= 0) {
+      throw new Error("Weight must be a positive number");
     }
 
     const set: Doc<"exerciseSets">["sets"][number] = {

@@ -120,7 +120,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
         const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
         if (user.lastBodyWeightUpdate < sevenDaysAgo) {
           toast.warning(
-            "Your body weight hasn't been updated in over 7 days. Please update it in settings for accurate tracking."
+            "Your body weight hasn't been updated in over 7 days. Consider updating it in settings for accuracy."
           );
           return;
         }
@@ -237,9 +237,13 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
               <p className="flex items-center gap-2">
                 <span className="font-medium text-muted-foreground">PB:</span>
                 <span className="font-semibold">
-                  {exercisePerformance.personalBest?.weight}
-                  {exercisePerformance.personalBest?.weightUnit ||
-                    ""} &times; {exercisePerformance.personalBest?.reps}
+                  {exercisePerformance.personalBest?.isBodyWeight
+                    ? "BW"
+                    : exercisePerformance.personalBest?.weight}
+                  {exercisePerformance.personalBest?.isBodyWeight
+                    ? ""
+                    : exercisePerformance.personalBest?.weightUnit || ""}{" "}
+                  &times; {exercisePerformance.personalBest?.reps}
                 </span>
               </p>
               {exercisePerformance.lastWeight ? (
@@ -248,9 +252,13 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                     Last Time:
                   </span>
                   <span className="font-semibold">
-                    {exercisePerformance.lastWeight}
-                    {exercisePerformance.lastWeightUnit || ""} &times;{" "}
-                    {exercisePerformance.lastReps}
+                    {exercisePerformance.lastIsBodyWeight
+                      ? "BW"
+                      : exercisePerformance.lastWeight}
+                    {exercisePerformance.lastIsBodyWeight
+                      ? ""
+                      : exercisePerformance.lastWeightUnit || ""}{" "}
+                    &times; {exercisePerformance.lastReps}
                   </span>{" "}
                   {exercisePerformance.lastSets ? (
                     <span className="font-semibold">
@@ -364,7 +372,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                           </span>
                         ) : null}
                         <Input
-                          min={0}
+                          min={isBodyWeight ? undefined : 1}
                           placeholder={isBodyWeight ? "Body Weight" : "0"}
                           type="number"
                           inputMode="numeric"

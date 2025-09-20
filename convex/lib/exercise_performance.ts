@@ -75,6 +75,7 @@ export async function updatePersonalBest(
     personalBest = {
       weight: bestSet.weight,
       weightUnit: bestSet.weightUnit,
+      isBodyWeight: bestSet.isBodyWeight,
       reps: bestSet.reps,
       date: workoutDate,
     };
@@ -151,7 +152,7 @@ export async function updateLastWorkoutData(
     lastReps: bestSet.reps,
     lastSets: allSets.length,
     lastWorkoutDate: workoutDate,
-    personalBest: existingPerformance?.personalBest, // Keep existing personal best
+    lastIsBodyWeight: bestSet.isBodyWeight,
     totalWorkouts,
   };
 
@@ -168,19 +169,17 @@ function getBestSet(
     _sessionId?: Id<"workoutSessions">;
   })[]
 ) {
-  // Find the best set (highest weight, then highest reps if weights are equal unless
-  // it's a body weight set - accounts for reps only)
-  const bestSet = sets.reduce((best, current) => {
-    if (current.isBodyWeight) {
-      if (current.reps > best.reps) return current;
-      if (current.reps === best.reps && current.weight > best.weight)
-        return current;
-      return best;
+  const cmp = (a: (typeof sets)[number], b: (typeof sets)[number]) => {
+    if (a.isBodyWeight || b.isBodyWeight) {
+      if (a.reps !== b.reps) return a.reps - b.reps;
+      return a.weight - b.weight;
     }
-    if (current.weight > best.weight) return current;
-    if (current.weight === best.weight && current.reps > best.reps)
-      return current;
-    return best;
-  });
+    if (a.weight !== b.weight) return a.weight - b.weight;
+    return a.reps - b.reps;
+  };
+  const bestSet = sets.reduce(
+    (best, cur) => (cmp(cur, best) > 0 ? cur : best),
+    sets[0]
+  );
   return bestSet;
 }

@@ -4,8 +4,6 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 ## 🏋️‍♂️ Development Todo List
 
-// TODO: add an is body weight option to UI
-
 ### Bugs
 
 - [x] Remove cardio exercises from the exercise library
