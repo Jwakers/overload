@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { Check, Plus } from "lucide-react";
@@ -52,6 +53,15 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
   const exerciseSet = useQuery(api.exerciseSets.get, {
     exerciseSetId,
   });
+  const exercisePerformance = useQuery(
+    api.exercisePerformance.get,
+    exerciseSet?.exerciseId
+      ? {
+          exerciseId: exerciseSet?.exerciseId,
+        }
+      : "skip"
+  );
+
   const addSetMutation = useMutation(
     api.exerciseSets.addSet
   ).withOptimisticUpdate((localStore, args) => {
@@ -79,6 +89,12 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
   const [isPending, startTransition] = useTransition();
   const [showNotes, setShowNotes] = useState(false);
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Store the initial PB when component mounts to compare against throughout the workout
+  const [initialPersonalBest, setInitialPersonalBest] = useState<{
+    weight: number;
+    reps: number;
+  } | null>(null);
 
   const form = useForm<ExerciseSetFormData>({
     resolver: zodResolver(exerciseSetSchema),
@@ -147,10 +163,78 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
     if (showNotes) notesTextareaRef.current?.focus();
   }, [showNotes]);
 
+  // Capture the initial personal best when performance data loads
+  useEffect(() => {
+    if (exercisePerformance?.personalBest && !initialPersonalBest) {
+      setInitialPersonalBest({
+        weight: exercisePerformance.personalBest.weight,
+        reps: exercisePerformance.personalBest.reps,
+      });
+    }
+  }, [exercisePerformance?.personalBest, initialPersonalBest]);
+
+  // Helper function to check if a set is a personal best achievement
+  const getPersonalBestStatus = (set: Doc<"exerciseSets">["sets"][number]) => {
+    // Use initial PB if available, otherwise fall back to current PB
+    const pbToCompare =
+      initialPersonalBest || exercisePerformance?.personalBest;
+    if (!pbToCompare) return null;
+
+    const { weight, reps } = set;
+    const { weight: pbWeight, reps: pbReps } = pbToCompare;
+
+    // Check if this set exceeds the initial PB
+    const exceedsWeight = weight > pbWeight;
+    const exceedsReps = weight === pbWeight && reps > pbReps;
+    const matchesPB = weight === pbWeight && reps === pbReps;
+
+    if (exceedsWeight || exceedsReps) {
+      return "new-pb";
+    } else if (matchesPB) {
+      return "matches-pb";
+    }
+
+    return null;
+  };
+
   return (
     <div className="space-y-3">
       {exerciseSet ? (
         <div>
+          {/* Personal Best Info */}
+          {exercisePerformance && (
+            <div className="bg-muted/50 flex flex-wrap gap-4 justify-between rounded-lg p-3 mb-4 text-xs">
+              <p className="flex items-center gap-2">
+                <span className="font-medium text-muted-foreground">PB:</span>
+                <span className="font-semibold">
+                  {exercisePerformance.personalBest?.weight}
+                  {user?.preferences?.defaultWeightUnit?.toLowerCase() ||
+                    "lbs"}{" "}
+                  &times; {exercisePerformance.personalBest?.reps}
+                </span>
+              </p>
+              {exercisePerformance.lastWeight ? (
+                <p className="flex items-center gap-2">
+                  <span className="font-medium text-muted-foreground">
+                    Last Time:
+                  </span>
+                  <span className="font-semibold">
+                    {exercisePerformance.lastWeight}
+                    {exercisePerformance.lastWeightUnit?.toLowerCase() ||
+                      "lbs"}{" "}
+                    &times; {exercisePerformance.lastReps}
+                  </span>{" "}
+                  {exercisePerformance.lastSets ? (
+                    <span className="font-semibold">
+                      | {exercisePerformance.lastSets}{" "}
+                      {exercisePerformance.lastSets > 1 ? "sets" : "set"}
+                    </span>
+                  ) : null}
+                </p>
+              ) : null}
+            </div>
+          )}
+
           <Table>
             <TableHeader>
               <TableRow>
@@ -161,26 +245,65 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {exerciseSet.sets.map((set, i) => (
-                <TableRow key={set.id}>
-                  <TableCell className="font-medium">{i + 1}</TableCell>
-                  <TableCell>
-                    {set.weight}
-                    {set.weightUnit}
-                  </TableCell>
-                  <TableCell>{set.reps}</TableCell>
-                  <TableCell className="text-right">
-                    <DeleteDialog
-                      disabled={isPending}
-                      onConfirm={() => handleDeleteSet(set.id)}
-                      title="Delete Set"
-                      description="Are you sure you want to delete this set? This action cannot be undone."
-                      confirmButtonText="Delete Set"
-                      triggerTitle="Delete set"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {exerciseSet.sets.map((set, i) => {
+                const pbStatus = getPersonalBestStatus(set);
+                const isNewPB = pbStatus === "new-pb";
+                const isMatchesPB = pbStatus === "matches-pb";
+
+                return (
+                  <TableRow
+                    key={set.id}
+                    className={
+                      isNewPB
+                        ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                        : isMatchesPB
+                        ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
+                        : ""
+                    }
+                  >
+                    <TableCell className="font-medium">
+                      {i + 1}
+                      {isNewPB && (
+                        <span className="ml-2 text-xs text-green-600 font-semibold">
+                          NEW PB
+                        </span>
+                      )}
+                      {isMatchesPB && (
+                        <span className="ml-2 text-xs text-blue-600 font-semibold">
+                          CURRENT PB
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell
+                      className={cn({
+                        "font-semibold text-blue-700": isMatchesPB,
+                        "font-semibold text-green-700": isNewPB,
+                      })}
+                    >
+                      {set.weight}
+                      {set.weightUnit}
+                    </TableCell>
+                    <TableCell
+                      className={cn({
+                        "font-semibold text-blue-700": isMatchesPB,
+                        "font-semibold text-green-700": isNewPB,
+                      })}
+                    >
+                      {set.reps}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DeleteDialog
+                        disabled={isPending}
+                        onConfirm={() => handleDeleteSet(set.id)}
+                        title="Delete Set"
+                        description="Are you sure you want to delete this set? This action cannot be undone."
+                        confirmButtonText="Delete Set"
+                        triggerTitle="Delete set"
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

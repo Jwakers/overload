@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { Doc, Id } from "./_generated/dataModel";
 import { mutation, MutationCtx, query } from "./_generated/server";
+import { updatePersonalBest } from "./lib/exercise_performance";
 import { getCurrentUserOrThrow } from "./users";
 
 export const create = mutation({
@@ -132,8 +133,8 @@ export const addSet = mutation({
       sets: [...exerciseSet.sets, set],
     });
 
-    // Update exercise performance data
-    await updateExercisePerformance(
+    // Update personal best if this set is a new PB
+    await updatePersonalBest(
       ctx,
       workoutSession.userId,
       exerciseSet.exerciseId,
@@ -154,8 +155,7 @@ export const deleteExerciseSet = mutation({
 
     await ctx.db.delete(args.exerciseSetId);
 
-    // Update exercise performance data after deletion
-    await updateExercisePerformance(
+    await updatePersonalBest(
       ctx,
       workoutSession.userId,
       exerciseSet.exerciseId,
@@ -179,8 +179,7 @@ export const deleteSet = mutation({
       sets: exerciseSet.sets.filter((set) => set.id !== args.setId),
     });
 
-    // Update exercise performance data after deletion
-    await updateExercisePerformance(
+    await updatePersonalBest(
       ctx,
       workoutSession.userId,
       exerciseSet.exerciseId,
@@ -207,104 +206,4 @@ async function assertAccess(
     exerciseSet,
     workoutSession,
   };
-}
-
-async function updateExercisePerformance(
-  ctx: MutationCtx,
-  userId: Id<"users">,
-  exerciseId: Id<"exercises">,
-  workoutSessionId: Id<"workoutSessions">
-) {
-  // Get all exercise sets for this exercise in this workout session
-  const exerciseSets = await ctx.db
-    .query("exerciseSets")
-    .withIndex("by_workout_session_id", (q) =>
-      q.eq("workoutSessionId", workoutSessionId)
-    )
-    .filter((q) => q.eq(q.field("exerciseId"), exerciseId))
-    .collect();
-
-  // Calculate performance metrics from all sets
-  const allSets = exerciseSets.flatMap((set) => set.sets);
-  if (allSets.length === 0) return;
-
-  // Get the workout session to get the date
-  const workoutSession = await ctx.db.get(workoutSessionId);
-  if (!workoutSession) return;
-
-  const workoutDate = workoutSession.startedAt;
-
-  // Calculate totals
-  const totalSets = allSets.length;
-
-  // Get the last set (most recent)
-  const lastSet = allSets[allSets.length - 1];
-
-  // Find the best set (highest weight for progressive overload tracking)
-  const bestSet = allSets.reduce((best, current) => {
-    return current.weight > best.weight ? current : best;
-  });
-
-  // Check if this is a new personal best
-  const existingPerformance = await ctx.db
-    .query("exercisePerformance")
-    .withIndex("by_user_id_and_exercise", (q) =>
-      q.eq("userId", userId).eq("exerciseId", exerciseId)
-    )
-    .first();
-
-  let personalBest = existingPerformance?.personalBest;
-  const bestWeight = bestSet.weight;
-  const existingBestWeight = personalBest ? personalBest.weight : 0;
-
-  if (bestWeight > existingBestWeight) {
-    personalBest = {
-      weight: bestSet.weight,
-      reps: bestSet.reps,
-      date: workoutDate,
-    };
-  }
-
-  // Count total workouts for this exercise
-  const allWorkoutSessions = await ctx.db
-    .query("workoutSessions")
-    .withIndex("by_user_id", (q) => q.eq("userId", userId))
-    .collect();
-
-  const exerciseWorkoutCount = await Promise.all(
-    allWorkoutSessions.map(async (session) => {
-      const hasExercise = await ctx.db
-        .query("exerciseSets")
-        .withIndex("by_workout_session_id", (q) =>
-          q.eq("workoutSessionId", session._id)
-        )
-        .filter((q) => q.eq(q.field("exerciseId"), exerciseId))
-        .first();
-      return hasExercise ? 1 : 0;
-    })
-  );
-
-  const totalWorkouts = exerciseWorkoutCount.reduce(
-    (sum, count) => sum + count,
-    0 as number
-  );
-
-  // Update or create performance record
-  const performanceData = {
-    userId,
-    exerciseId,
-    lastWeight: lastSet.weight,
-    lastWeightUnit: lastSet.weightUnit,
-    lastReps: lastSet.reps,
-    lastSets: totalSets,
-    lastWorkoutDate: workoutDate,
-    personalBest,
-    totalWorkouts,
-  };
-
-  if (existingPerformance) {
-    await ctx.db.patch(existingPerformance._id, performanceData);
-  } else {
-    await ctx.db.insert("exercisePerformance", performanceData);
-  }
 }

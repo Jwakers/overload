@@ -107,11 +107,11 @@ export default defineSchema({
   exercisePerformance: defineTable({
     userId: v.id("users"),
     exerciseId: v.id("exercises"),
-    lastWeight: v.number(),
-    lastWeightUnit: v.union(v.literal("lbs"), v.literal("kg")),
-    lastReps: v.number(),
-    lastSets: v.number(),
-    lastWorkoutDate: v.number(),
+    lastWeight: v.optional(v.number()),
+    lastWeightUnit: v.optional(v.union(v.literal("lbs"), v.literal("kg"))),
+    lastReps: v.optional(v.number()),
+    lastSets: v.optional(v.number()),
+    lastWorkoutDate: v.optional(v.number()),
     personalBest: v.optional(
       v.object({
         weight: v.number(),

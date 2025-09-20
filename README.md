@@ -4,11 +4,15 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 ## 🏋️‍♂️ Development Todo List
 
+// TODO: add an is body weight option to UI
+
 ### Bugs
 
 - [x] Remove cardio exercises from the exercise library
 - [x] On Iphone we need the UI to avoid the notch at the bottom of the screen
 - [ ] Clicking toasts close the drawers
+- [ ] On saving a workout session, all unsaved exercise sets should be saved first or at least warn that they are not saved
+- [ ] When setting and saving PD and performance data we must account for difference in weight unit
 - [ ] Signed out users can see the nav and start workouts
 - [ ] Edit exercise button does not work (happened when workout sets were all deleted)
 - [ ] Should not be able to delete sets unless the exercise set isActive

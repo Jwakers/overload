@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { mutation, MutationCtx, query, QueryCtx } from "./_generated/server";
+import { updateLastWorkoutData } from "./lib/exercise_performance";
 import { getCurrentUserOrThrow } from "./users";
 
 const _createWorkoutSession = async (ctx: MutationCtx, userId: Id<"users">) => {
@@ -162,6 +163,13 @@ export const complete = mutation({
       completedAt: Date.now(),
       notes: args.notes,
     });
+
+    // Update exercise performance data for all exercises in this workout
+    await updateAllExercisePerformance(
+      ctx,
+      workoutSession.userId,
+      args.workoutSessionId
+    );
   },
 });
 
@@ -204,3 +212,27 @@ export const updateSplit = mutation({
     await ctx.db.patch(workoutSession._id, { splitId: args.splitId });
   },
 });
+
+async function updateAllExercisePerformance(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+  workoutSessionId: Id<"workoutSessions">
+) {
+  // Get all exercise sets for this workout session
+  const exerciseSets = await ctx.db
+    .query("exerciseSets")
+    .withIndex("by_workout_session_id", (q) =>
+      q.eq("workoutSessionId", workoutSessionId)
+    )
+    .collect();
+
+  // Group by exercise ID to get unique exercises
+  const exerciseIds = [...new Set(exerciseSets.map((set) => set.exerciseId))];
+
+  // Update last workout data for each exercise
+  await Promise.all(
+    exerciseIds.map((exerciseId) =>
+      updateLastWorkoutData(ctx, userId, exerciseId, workoutSessionId)
+    )
+  );
+}
