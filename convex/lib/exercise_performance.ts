@@ -40,10 +40,9 @@ export async function updatePersonalBest(
     return;
   }
 
-  const bestSet = getBestSet(allSets);
+  const bestSet = getBestSet(allSets) as (typeof allSets)[number];
 
   // Resolve workout date from the session that contains the PB set
-  if (!bestSet._sessionId) return;
   const bestSession = await ctx.db.get(bestSet._sessionId);
   if (!bestSession) return;
   const workoutDate = bestSession.startedAt;
