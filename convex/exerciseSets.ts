@@ -98,6 +98,7 @@ export const addSet = mutation({
   args: {
     exerciseSetId: v.id("exerciseSets"),
     weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
+    isBodyWeight: v.optional(v.boolean()),
     set: v.object({
       weight: v.number(),
       reps: v.number(),
@@ -105,14 +106,16 @@ export const addSet = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const { exerciseSet, workoutSession } = await assertAccess(
+    const { user, exerciseSet, workoutSession } = await assertAccess(
       ctx,
       args.exerciseSetId
     );
 
-    // Basic validation
-    if (!Number.isFinite(args.set.weight) || args.set.weight < 0) {
-      throw new Error("Weight must be a non-negative number");
+    // Basic validation (only for non‑BW sets; BW uses user.bodyWeight)
+    if (!args.isBodyWeight) {
+      if (!Number.isFinite(args.set.weight) || args.set.weight <= 0) {
+        throw new Error("Weight must be a positive number");
+      }
     }
     if (!Number.isFinite(args.set.reps) || args.set.reps < 1) {
       throw new Error("Reps must be at least 1");
@@ -121,13 +124,36 @@ export const addSet = mutation({
       throw new Error("Notes must be no more than 255 characters");
     }
 
+    if (args.isBodyWeight) {
+      if (
+        user.bodyWeight === undefined ||
+        !Number.isFinite(user.bodyWeight) ||
+        user.bodyWeight <= 0
+      ) {
+        throw new Error("Body weight must be set and positive");
+      }
+    }
+
+    const weightUnit = args.isBodyWeight
+      ? user.bodyWeightUnit
+      : args.weightUnit;
+    const weight = args.isBodyWeight ? user.bodyWeight : args.set.weight;
+
+    if (!weightUnit) {
+      throw new Error("Weight unit is not set");
+    }
+
+    if (!Number.isFinite(weight) || weight === undefined || weight <= 0) {
+      throw new Error("Weight must be a positive number");
+    }
+
     const set: Doc<"exerciseSets">["sets"][number] = {
       id: crypto.randomUUID(),
-      weight: args.set.weight,
+      weight,
       reps: args.set.reps,
       notes: args.set.notes,
-      weightUnit: args.weightUnit,
-      isBodyWeight: false,
+      weightUnit,
+      isBodyWeight: args.isBodyWeight || false,
     };
 
     await ctx.db.patch(args.exerciseSetId, {
@@ -201,6 +227,7 @@ async function assertAccess(
   }
 
   return {
+    user,
     exerciseSet,
     workoutSession,
   };

@@ -1,4 +1,4 @@
-import { Id } from "../_generated/dataModel";
+import { Doc, Id } from "../_generated/dataModel";
 import { MutationCtx } from "../_generated/server";
 
 export async function updatePersonalBest(
@@ -30,6 +30,7 @@ export async function updatePersonalBest(
         q.eq("userId", userId).eq("exerciseId", exerciseId)
       )
       .first();
+
     if (existingPerformance) {
       await ctx.db.patch(existingPerformance._id, {
         personalBest: undefined,
@@ -39,13 +40,7 @@ export async function updatePersonalBest(
     return;
   }
 
-  // Find the best set (highest weight, then highest reps if weights are equal)
-  const bestSet = allSets.reduce((best, current) => {
-    if (current.weight > best.weight) return current;
-    if (current.weight === best.weight && current.reps > best.reps)
-      return current;
-    return best;
-  });
+  const bestSet = getBestSet(allSets) as (typeof allSets)[number];
 
   // Resolve workout date from the session that contains the PB set
   const bestSession = await ctx.db.get(bestSet._sessionId);
@@ -67,14 +62,19 @@ export async function updatePersonalBest(
   const existingBestReps = personalBest?.reps ?? 0;
 
   // Update personal best if weight is higher, or if weight is equal and reps are higher
-  const isNewPersonalBest =
+  let isNewPersonalBest =
     bestWeight > existingBestWeight ||
     (bestWeight === existingBestWeight && bestReps > existingBestReps);
+
+  if (bestSet.isBodyWeight) {
+    isNewPersonalBest = bestReps > existingBestReps;
+  }
 
   if (isNewPersonalBest) {
     personalBest = {
       weight: bestSet.weight,
       weightUnit: bestSet.weightUnit,
+      isBodyWeight: bestSet.isBodyWeight,
       reps: bestSet.reps,
       date: workoutDate,
     };
@@ -106,10 +106,9 @@ export async function updateLastWorkoutData(
   // Get all exercise sets for this exercise in this workout session
   const exerciseSets = await ctx.db
     .query("exerciseSets")
-    .withIndex("by_workout_session_id", (q) =>
-      q.eq("workoutSessionId", workoutSessionId)
+    .withIndex("by_workout_session_id_and_exercise_id", (q) =>
+      q.eq("workoutSessionId", workoutSessionId).eq("exerciseId", exerciseId)
     )
-    .filter((q) => q.eq(q.field("exerciseId"), exerciseId))
     .collect();
 
   // Calculate performance metrics from all sets
@@ -121,14 +120,7 @@ export async function updateLastWorkoutData(
   if (!workoutSession) return;
 
   const workoutDate = workoutSession.startedAt;
-
-  // Find the best set (highest weight, then highest reps if weights are equal)
-  const bestSet = allSets.reduce((best, current) => {
-    if (current.weight > best.weight) return current;
-    if (current.weight === best.weight && current.reps > best.reps)
-      return current;
-    return best;
-  });
+  const bestSet = getBestSet(allSets);
 
   // Get existing performance record
   const existingPerformance = await ctx.db
@@ -159,7 +151,7 @@ export async function updateLastWorkoutData(
     lastReps: bestSet.reps,
     lastSets: allSets.length,
     lastWorkoutDate: workoutDate,
-    personalBest: existingPerformance?.personalBest, // Keep existing personal best
+    lastIsBodyWeight: bestSet.isBodyWeight,
     totalWorkouts,
   };
 
@@ -169,4 +161,24 @@ export async function updateLastWorkoutData(
   }
 
   await ctx.db.insert("exercisePerformance", performanceData);
+}
+
+function getBestSet(
+  sets: (Doc<"exerciseSets">["sets"][number] & {
+    _sessionId?: Id<"workoutSessions">;
+  })[]
+) {
+  const cmp = (a: (typeof sets)[number], b: (typeof sets)[number]) => {
+    if (a.isBodyWeight || b.isBodyWeight) {
+      if (a.reps !== b.reps) return a.reps - b.reps;
+      return a.weight - b.weight;
+    }
+    if (a.weight !== b.weight) return a.weight - b.weight;
+    return a.reps - b.reps;
+  };
+  const bestSet = sets.reduce(
+    (best, cur) => (cmp(cur, best) > 0 ? cur : best),
+    sets[0]
+  );
+  return bestSet;
 }

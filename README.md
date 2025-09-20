@@ -4,8 +4,6 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 ## 🏋️‍♂️ Development Todo List
 
-// TODO: add an is body weight option to UI
-
 ### Bugs
 
 - [x] Remove cardio exercises from the exercise library
@@ -20,6 +18,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] No way to sign out
 - [ ] Toast descriptions are too light for example when used for push notification toasts
 - [ ] Notifications section in settings. Green tick is squashed on Iphone
+- [ ] The PB styling on sets when it comes to body weight is not working as intended
 
 ### Phase 1: Project Setup & Dependencies
 
