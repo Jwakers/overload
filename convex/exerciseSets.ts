@@ -98,6 +98,7 @@ export const addSet = mutation({
   args: {
     exerciseSetId: v.id("exerciseSets"),
     weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
+    isBodyWeight: v.optional(v.boolean()),
     set: v.object({
       weight: v.number(),
       reps: v.number(),
@@ -105,7 +106,7 @@ export const addSet = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const { exerciseSet, workoutSession } = await assertAccess(
+    const { user, exerciseSet, workoutSession } = await assertAccess(
       ctx,
       args.exerciseSetId
     );
@@ -121,13 +122,30 @@ export const addSet = mutation({
       throw new Error("Notes must be no more than 255 characters");
     }
 
+    if (args.isBodyWeight && !user.bodyWeight === undefined) {
+      throw new Error("Body weight is not set");
+    }
+
+    const weightUnit = args.isBodyWeight
+      ? user.bodyWeightUnit
+      : args.weightUnit;
+    const weight = args.isBodyWeight ? user.bodyWeight : args.set.weight;
+
+    if (!weightUnit) {
+      throw new Error("Weight unit is not set");
+    }
+
+    if (!weight) {
+      throw new Error("Weight is not set");
+    }
+
     const set: Doc<"exerciseSets">["sets"][number] = {
       id: crypto.randomUUID(),
-      weight: args.set.weight,
+      weight,
       reps: args.set.reps,
       notes: args.set.notes,
-      weightUnit: args.weightUnit,
-      isBodyWeight: false,
+      weightUnit,
+      isBodyWeight: args.isBodyWeight || false,
     };
 
     await ctx.db.patch(args.exerciseSetId, {
@@ -201,6 +219,7 @@ async function assertAccess(
   }
 
   return {
+    user,
     exerciseSet,
     workoutSession,
   };
