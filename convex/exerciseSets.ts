@@ -138,8 +138,7 @@ export const addSet = mutation({
     await updatePersonalBest(
       ctx,
       workoutSession.userId,
-      exerciseSet.exerciseId,
-      exerciseSet.workoutSessionId
+      exerciseSet.exerciseId
     );
   },
 });
@@ -159,8 +158,7 @@ export const deleteExerciseSet = mutation({
     await updatePersonalBest(
       ctx,
       workoutSession.userId,
-      exerciseSet.exerciseId,
-      exerciseSet.workoutSessionId
+      exerciseSet.exerciseId
     );
   },
 });
@@ -183,8 +181,7 @@ export const deleteSet = mutation({
     await updatePersonalBest(
       ctx,
       workoutSession.userId,
-      exerciseSet.exerciseId,
-      exerciseSet.workoutSessionId
+      exerciseSet.exerciseId
     );
   },
 });

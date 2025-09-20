@@ -117,6 +117,7 @@ export default defineSchema({
     personalBest: v.optional(
       v.object({
         weight: v.number(),
+        weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
         reps: v.number(),
         date: v.number(),
       })

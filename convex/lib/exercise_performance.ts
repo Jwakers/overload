@@ -4,27 +4,40 @@ import { MutationCtx } from "../_generated/server";
 export async function updatePersonalBest(
   ctx: MutationCtx,
   userId: Id<"users">,
-  exerciseId: Id<"exercises">,
-  workoutSessionId: Id<"workoutSessions">
+  exerciseId: Id<"exercises">
 ) {
-  // Get all exercise sets for this exercise in this workout session
+  // Recompute PB across ALL sessions for this user/exercise
   const exerciseSets = await ctx.db
     .query("exerciseSets")
-    .withIndex("by_workout_session_id", (q) =>
-      q.eq("workoutSessionId", workoutSessionId)
+    .withIndex("by_exercise_id_and_user_id", (q) =>
+      q.eq("exerciseId", exerciseId).eq("userId", userId)
     )
-    .filter((q) => q.eq(q.field("exerciseId"), exerciseId))
     .collect();
 
-  // Calculate performance metrics from all sets
-  const allSets = exerciseSets.flatMap((set) => set.sets);
-  if (allSets.length === 0) return;
+  // Calculate performance metrics from all sets, keeping session linkage
+  const allSets = exerciseSets.flatMap((es) =>
+    es.sets.map((s) => ({ ...s, _sessionId: es.workoutSessionId }))
+  );
 
-  // Get the workout session to get the date
-  const workoutSession = await ctx.db.get(workoutSessionId);
-  if (!workoutSession) return;
+  const totalWorkouts = new Set(exerciseSets.map((es) => es.workoutSessionId))
+    .size;
 
-  const workoutDate = workoutSession.startedAt;
+  // No sets at all: clear PB if it exists and keep counts coherent
+  if (allSets.length === 0) {
+    const existingPerformance = await ctx.db
+      .query("exercisePerformance")
+      .withIndex("by_user_id_and_exercise", (q) =>
+        q.eq("userId", userId).eq("exerciseId", exerciseId)
+      )
+      .first();
+    if (existingPerformance) {
+      await ctx.db.patch(existingPerformance._id, {
+        personalBest: undefined,
+        totalWorkouts,
+      });
+    }
+    return;
+  }
 
   // Find the best set (highest weight, then highest reps if weights are equal)
   const bestSet = allSets.reduce((best, current) => {
@@ -33,6 +46,11 @@ export async function updatePersonalBest(
       return current;
     return best;
   });
+
+  // Resolve workout date from the session that contains the PB set
+  const bestSession = await ctx.db.get(bestSet._sessionId);
+  if (!bestSession) return;
+  const workoutDate = bestSession.startedAt;
 
   // Check if this is a new personal best
   const existingPerformance = await ctx.db
@@ -56,19 +74,23 @@ export async function updatePersonalBest(
   if (isNewPersonalBest) {
     personalBest = {
       weight: bestSet.weight,
+      weightUnit: bestSet.weightUnit,
       reps: bestSet.reps,
       date: workoutDate,
     };
 
     if (existingPerformance) {
-      await ctx.db.patch(existingPerformance._id, { personalBest });
+      await ctx.db.patch(existingPerformance._id, {
+        personalBest,
+        totalWorkouts,
+      });
     } else {
       // Create new performance record if it doesn't exist
       await ctx.db.insert("exercisePerformance", {
         userId,
         exerciseId,
         personalBest,
-        totalWorkouts: 1,
+        totalWorkouts,
       });
     }
   }

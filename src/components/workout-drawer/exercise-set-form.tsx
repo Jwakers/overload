@@ -208,9 +208,8 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                 <span className="font-medium text-muted-foreground">PB:</span>
                 <span className="font-semibold">
                   {exercisePerformance.personalBest?.weight}
-                  {user?.preferences?.defaultWeightUnit?.toLowerCase() ||
-                    "lbs"}{" "}
-                  &times; {exercisePerformance.personalBest?.reps}
+                  {user?.preferences?.defaultWeightUnit || ""} &times;{" "}
+                  {exercisePerformance.personalBest?.reps}
                 </span>
               </p>
               {exercisePerformance.lastWeight ? (
@@ -220,9 +219,8 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                   </span>
                   <span className="font-semibold">
                     {exercisePerformance.lastWeight}
-                    {exercisePerformance.lastWeightUnit?.toLowerCase() ||
-                      "lbs"}{" "}
-                    &times; {exercisePerformance.lastReps}
+                    {exercisePerformance.lastWeightUnit || ""} &times;{" "}
+                    {exercisePerformance.lastReps}
                   </span>{" "}
                   {exercisePerformance.lastSets ? (
                     <span className="font-semibold">
@@ -255,9 +253,9 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
                     key={set.id}
                     className={
                       isNewPB
-                        ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                        ? "bg-green-50 dark:bg-green-950/20 border-green-200"
                         : isMatchesPB
-                        ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
+                        ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200"
                         : ""
                     }
                   >
