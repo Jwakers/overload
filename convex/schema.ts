@@ -103,7 +103,6 @@ export default defineSchema({
     ),
   })
     .index("by_workout_session_id", ["workoutSessionId"])
-    .index("by_exercise_id", ["exerciseId"])
     .index("by_exercise_id_and_user_id", ["exerciseId", "userId"]),
 
   exercisePerformance: defineTable({
