@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { Doc, Id } from "./_generated/dataModel";
 import { mutation, MutationCtx, query } from "./_generated/server";
+import { updatePersonalBest } from "./lib/exercise_performance";
 import { getCurrentUserOrThrow } from "./users";
 
 export const create = mutation({
@@ -31,6 +32,7 @@ export const create = mutation({
     const nextOrder =
       Math.max(...(previousSets ?? []).map((s) => s.order ?? 0), 0) + 1;
     const exerciseSetId = await ctx.db.insert("exerciseSets", {
+      userId: user._id,
       workoutSessionId: args.workoutSessionId,
       exerciseId: args.exerciseId,
       isActive: true,
@@ -103,7 +105,10 @@ export const addSet = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const { exerciseSet } = await assertAccess(ctx, args.exerciseSetId);
+    const { exerciseSet, workoutSession } = await assertAccess(
+      ctx,
+      args.exerciseSetId
+    );
 
     // Basic validation
     if (!Number.isFinite(args.set.weight) || args.set.weight < 0) {
@@ -128,6 +133,13 @@ export const addSet = mutation({
     await ctx.db.patch(args.exerciseSetId, {
       sets: [...exerciseSet.sets, set],
     });
+
+    // Update personal best if this set is a new PB
+    await updatePersonalBest(
+      ctx,
+      workoutSession.userId,
+      exerciseSet.exerciseId
+    );
   },
 });
 
@@ -136,9 +148,18 @@ export const deleteExerciseSet = mutation({
     exerciseSetId: v.id("exerciseSets"),
   },
   handler: async (ctx, args) => {
-    await assertAccess(ctx, args.exerciseSetId);
+    const { exerciseSet, workoutSession } = await assertAccess(
+      ctx,
+      args.exerciseSetId
+    );
 
     await ctx.db.delete(args.exerciseSetId);
+
+    await updatePersonalBest(
+      ctx,
+      workoutSession.userId,
+      exerciseSet.exerciseId
+    );
   },
 });
 
@@ -148,11 +169,20 @@ export const deleteSet = mutation({
     setId: v.string(),
   },
   handler: async (ctx, args) => {
-    const { exerciseSet } = await assertAccess(ctx, args.exerciseSetId);
+    const { exerciseSet, workoutSession } = await assertAccess(
+      ctx,
+      args.exerciseSetId
+    );
 
     await ctx.db.patch(args.exerciseSetId, {
       sets: exerciseSet.sets.filter((set) => set.id !== args.setId),
     });
+
+    await updatePersonalBest(
+      ctx,
+      workoutSession.userId,
+      exerciseSet.exerciseId
+    );
   },
 });
 

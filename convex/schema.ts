@@ -86,6 +86,7 @@ export default defineSchema({
     .index("by_user_id_and_active", ["userId", "isActive"]),
 
   exerciseSets: defineTable({
+    userId: v.id("users"),
     workoutSessionId: v.id("workoutSessions"),
     exerciseId: v.id("exercises"),
     order: v.number(),
@@ -102,19 +103,20 @@ export default defineSchema({
     ),
   })
     .index("by_workout_session_id", ["workoutSessionId"])
-    .index("by_exercise_id", ["exerciseId"]),
+    .index("by_exercise_id_and_user_id", ["exerciseId", "userId"]),
 
   exercisePerformance: defineTable({
     userId: v.id("users"),
     exerciseId: v.id("exercises"),
-    lastWeight: v.number(),
-    lastWeightUnit: v.union(v.literal("lbs"), v.literal("kg")),
-    lastReps: v.number(),
-    lastSets: v.number(),
-    lastWorkoutDate: v.number(),
+    lastWeight: v.optional(v.number()),
+    lastWeightUnit: v.optional(v.union(v.literal("lbs"), v.literal("kg"))),
+    lastReps: v.optional(v.number()),
+    lastSets: v.optional(v.number()),
+    lastWorkoutDate: v.optional(v.number()),
     personalBest: v.optional(
       v.object({
         weight: v.number(),
+        weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
         reps: v.number(),
         date: v.number(),
       })

@@ -13,9 +13,11 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as exercisePerformance from "../exercisePerformance.js";
 import type * as exerciseSets from "../exerciseSets.js";
 import type * as exercises from "../exercises.js";
 import type * as http from "../http.js";
+import type * as lib_exercise_performance from "../lib/exercise_performance.js";
 import type * as lib_muscle_groups from "../lib/muscle_groups.js";
 import type * as pushSubscriptions from "../pushSubscriptions.js";
 import type * as splits from "../splits.js";
@@ -31,9 +33,11 @@ import type * as workoutSessions from "../workoutSessions.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  exercisePerformance: typeof exercisePerformance;
   exerciseSets: typeof exerciseSets;
   exercises: typeof exercises;
   http: typeof http;
+  "lib/exercise_performance": typeof lib_exercise_performance;
   "lib/muscle_groups": typeof lib_muscle_groups;
   pushSubscriptions: typeof pushSubscriptions;
   splits: typeof splits;

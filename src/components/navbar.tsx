@@ -27,7 +27,7 @@ export default function Navbar() {
   ];
 
   return (
-    <div className="bg-background border-t border-border">
+    <div className="bg-background border-t border-border safe-area-inset-bottom">
       <nav className="container py-1">
         <div className="flex justify-around items-center">
           {navItems.map((item) => {

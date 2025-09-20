@@ -276,41 +276,47 @@ export function WorkoutDrawer() {
                   </div>
                 );
               })}
-              <DrawerFooter className="sticky bottom-0 inset-x-0 flex items-center justify-between gap-2 w-full px-2">
-                <div className="flex items-center gap-2">
-                  <DeleteDialog
-                    onConfirm={handleDeleteWorkout}
-                    title="Delete Workout"
-                    description="Are you sure you want to delete this workout? This action cannot be undone."
-                    confirmButtonText="Delete"
-                  >
-                    <Button variant="ghost" size="icon" title="Delete Workout">
-                      <TrashIcon size={18} className="text-destructive" />
-                    </Button>
-                  </DeleteDialog>
+              <DrawerFooter className="safe-area-inset-bottom sticky bottom-2 inset-x-0 w-full px-0">
+                <div className="flex items-end justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <DeleteDialog
+                      onConfirm={handleDeleteWorkout}
+                      title="Delete Workout"
+                      description="Are you sure you want to delete this workout? This action cannot be undone."
+                      confirmButtonText="Delete"
+                    >
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        title="Delete Workout"
+                      >
+                        <TrashIcon size={18} />
+                      </Button>
+                    </DeleteDialog>
 
-                  <SaveWorkoutDialog
-                    isPending={isPending}
-                    disabled={!exerciseSets?.length}
-                    workoutSessionId={workoutSessionId}
-                    onComplete={() => {
-                      setOpen(false);
-                      setWorkoutSessionId(null);
-                    }}
-                  />
+                    <SaveWorkoutDialog
+                      isPending={isPending}
+                      disabled={!exerciseSets?.length}
+                      workoutSessionId={workoutSessionId}
+                      onComplete={() => {
+                        setOpen(false);
+                        setWorkoutSessionId(null);
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className={cn(
+                      "bg-brand text-brand-foreground flex items-center gap-2 p-3 rounded-full shadow",
+                      !workoutSessionId && "opacity-50 cursor-not-allowed"
+                    )}
+                    onClick={() => setSelectExerciseDialogOpen(true)}
+                    disabled={!workoutSessionId}
+                  >
+                    <DumbbellIcon size={18} />
+                    <p className="text-sm font-semibold">Add exercise</p>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className={cn(
-                    "bg-brand text-brand-foreground flex items-center gap-2 p-3 rounded-full shadow",
-                    !workoutSessionId && "opacity-50 cursor-not-allowed"
-                  )}
-                  onClick={() => setSelectExerciseDialogOpen(true)}
-                  disabled={!workoutSessionId}
-                >
-                  <DumbbellIcon size={18} />
-                  <p className="text-sm font-semibold">Add exercise</p>
-                </button>
               </DrawerFooter>
             </div>
           </div>
@@ -377,13 +383,8 @@ function SaveWorkoutDialog(props: {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          className="rounded-full"
-          size="icon"
-          disabled={isPending || disabled}
-          title="Save Workout"
-        >
-          <Save />
+        <Button disabled={isPending || disabled} title="Save Workout">
+          <Save /> Save workout
         </Button>
       </DialogTrigger>
       <DialogContent autoFocus={false}>
