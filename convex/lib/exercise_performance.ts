@@ -49,24 +49,19 @@ export async function updatePersonalBest(
   const existingBestReps = personalBest?.reps ?? 0;
 
   // Update personal best if weight is higher, or if weight is equal and reps are higher
-  if (
+  const isNewPersonalBest =
     bestWeight > existingBestWeight ||
-    (bestWeight === existingBestWeight && bestReps > existingBestReps)
-  ) {
+    (bestWeight === existingBestWeight && bestReps > existingBestReps);
+
+  if (isNewPersonalBest) {
     personalBest = {
       weight: bestSet.weight,
       reps: bestSet.reps,
       date: workoutDate,
     };
 
-    // Update the performance record with the new personal best
-    const performanceData = {
-      ...existingPerformance,
-      personalBest,
-    };
-
     if (existingPerformance) {
-      await ctx.db.patch(existingPerformance._id, performanceData);
+      await ctx.db.patch(existingPerformance._id, { personalBest });
     } else {
       // Create new performance record if it doesn't exist
       await ctx.db.insert("exercisePerformance", {
@@ -121,29 +116,17 @@ export async function updateLastWorkoutData(
     )
     .first();
 
-  // Count total workouts for this exercise
-  const allWorkoutSessionsForCount = await ctx.db
-    .query("workoutSessions")
-    .withIndex("by_user_id", (q) => q.eq("userId", userId))
+  // Count total workouts for this exercise by getting all exercise sets for this exercise
+  // and extracting unique workout session IDs
+  const allExerciseSetsForExercise = await ctx.db
+    .query("exerciseSets")
+    .withIndex("by_exercise_id_and_user_id", (q) =>
+      q.eq("exerciseId", exerciseId).eq("userId", userId)
+    )
     .collect();
 
-  const exerciseWorkoutCount = await Promise.all(
-    allWorkoutSessionsForCount.map(async (session) => {
-      const hasExercise = await ctx.db
-        .query("exerciseSets")
-        .withIndex("by_workout_session_id", (q) =>
-          q.eq("workoutSessionId", session._id)
-        )
-        .filter((q) => q.eq(q.field("exerciseId"), exerciseId))
-        .first();
-      return hasExercise ? 1 : 0;
-    })
-  );
-
-  const totalWorkouts = exerciseWorkoutCount.reduce(
-    (sum, count) => sum + count,
-    0 as number
-  );
+  const totalWorkouts = new Set(allExerciseSetsForExercise.filter(Boolean))
+    .size;
 
   // Update the performance record with the current workout's data as "last workout data"
   const performanceData = {

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { mutation, MutationCtx, query, QueryCtx } from "./_generated/server";
-import { updateLastWorkoutData } from "./lib/exercise_performance";
 import { getCurrentUserOrThrow } from "./users";
 
 const _createWorkoutSession = async (ctx: MutationCtx, userId: Id<"users">) => {
@@ -229,10 +229,14 @@ async function updateAllExercisePerformance(
   // Group by exercise ID to get unique exercises
   const exerciseIds = [...new Set(exerciseSets.map((set) => set.exerciseId))];
 
-  // Update last workout data for each exercise
-  await Promise.all(
-    exerciseIds.map((exerciseId) =>
-      updateLastWorkoutData(ctx, userId, exerciseId, workoutSessionId)
-    )
+  // Schedule performance updates
+  await ctx.scheduler.runAfter(
+    0,
+    internal.exercisePerformance.updateLastWorkout,
+    {
+      userId,
+      exerciseIds,
+      workoutSessionId,
+    }
   );
 }

@@ -32,6 +32,7 @@ export const create = mutation({
     const nextOrder =
       Math.max(...(previousSets ?? []).map((s) => s.order ?? 0), 0) + 1;
     const exerciseSetId = await ctx.db.insert("exerciseSets", {
+      userId: user._id,
       workoutSessionId: args.workoutSessionId,
       exerciseId: args.exerciseId,
       isActive: true,
