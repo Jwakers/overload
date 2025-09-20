@@ -103,7 +103,10 @@ export const addSet = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const { exerciseSet } = await assertAccess(ctx, args.exerciseSetId);
+    const { exerciseSet, workoutSession } = await assertAccess(
+      ctx,
+      args.exerciseSetId
+    );
 
     // Basic validation
     if (!Number.isFinite(args.set.weight) || args.set.weight < 0) {
@@ -128,6 +131,14 @@ export const addSet = mutation({
     await ctx.db.patch(args.exerciseSetId, {
       sets: [...exerciseSet.sets, set],
     });
+
+    // Update exercise performance data
+    await updateExercisePerformance(
+      ctx,
+      workoutSession.userId,
+      exerciseSet.exerciseId,
+      exerciseSet.workoutSessionId
+    );
   },
 });
 
@@ -136,9 +147,20 @@ export const deleteExerciseSet = mutation({
     exerciseSetId: v.id("exerciseSets"),
   },
   handler: async (ctx, args) => {
-    await assertAccess(ctx, args.exerciseSetId);
+    const { exerciseSet, workoutSession } = await assertAccess(
+      ctx,
+      args.exerciseSetId
+    );
 
     await ctx.db.delete(args.exerciseSetId);
+
+    // Update exercise performance data after deletion
+    await updateExercisePerformance(
+      ctx,
+      workoutSession.userId,
+      exerciseSet.exerciseId,
+      exerciseSet.workoutSessionId
+    );
   },
 });
 
@@ -148,11 +170,22 @@ export const deleteSet = mutation({
     setId: v.string(),
   },
   handler: async (ctx, args) => {
-    const { exerciseSet } = await assertAccess(ctx, args.exerciseSetId);
+    const { exerciseSet, workoutSession } = await assertAccess(
+      ctx,
+      args.exerciseSetId
+    );
 
     await ctx.db.patch(args.exerciseSetId, {
       sets: exerciseSet.sets.filter((set) => set.id !== args.setId),
     });
+
+    // Update exercise performance data after deletion
+    await updateExercisePerformance(
+      ctx,
+      workoutSession.userId,
+      exerciseSet.exerciseId,
+      exerciseSet.workoutSessionId
+    );
   },
 });
 
@@ -174,4 +207,104 @@ async function assertAccess(
     exerciseSet,
     workoutSession,
   };
+}
+
+async function updateExercisePerformance(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+  exerciseId: Id<"exercises">,
+  workoutSessionId: Id<"workoutSessions">
+) {
+  // Get all exercise sets for this exercise in this workout session
+  const exerciseSets = await ctx.db
+    .query("exerciseSets")
+    .withIndex("by_workout_session_id", (q) =>
+      q.eq("workoutSessionId", workoutSessionId)
+    )
+    .filter((q) => q.eq(q.field("exerciseId"), exerciseId))
+    .collect();
+
+  // Calculate performance metrics from all sets
+  const allSets = exerciseSets.flatMap((set) => set.sets);
+  if (allSets.length === 0) return;
+
+  // Get the workout session to get the date
+  const workoutSession = await ctx.db.get(workoutSessionId);
+  if (!workoutSession) return;
+
+  const workoutDate = workoutSession.startedAt;
+
+  // Calculate totals
+  const totalSets = allSets.length;
+
+  // Get the last set (most recent)
+  const lastSet = allSets[allSets.length - 1];
+
+  // Find the best set (highest weight for progressive overload tracking)
+  const bestSet = allSets.reduce((best, current) => {
+    return current.weight > best.weight ? current : best;
+  });
+
+  // Check if this is a new personal best
+  const existingPerformance = await ctx.db
+    .query("exercisePerformance")
+    .withIndex("by_user_id_and_exercise", (q) =>
+      q.eq("userId", userId).eq("exerciseId", exerciseId)
+    )
+    .first();
+
+  let personalBest = existingPerformance?.personalBest;
+  const bestWeight = bestSet.weight;
+  const existingBestWeight = personalBest ? personalBest.weight : 0;
+
+  if (bestWeight > existingBestWeight) {
+    personalBest = {
+      weight: bestSet.weight,
+      reps: bestSet.reps,
+      date: workoutDate,
+    };
+  }
+
+  // Count total workouts for this exercise
+  const allWorkoutSessions = await ctx.db
+    .query("workoutSessions")
+    .withIndex("by_user_id", (q) => q.eq("userId", userId))
+    .collect();
+
+  const exerciseWorkoutCount = await Promise.all(
+    allWorkoutSessions.map(async (session) => {
+      const hasExercise = await ctx.db
+        .query("exerciseSets")
+        .withIndex("by_workout_session_id", (q) =>
+          q.eq("workoutSessionId", session._id)
+        )
+        .filter((q) => q.eq(q.field("exerciseId"), exerciseId))
+        .first();
+      return hasExercise ? 1 : 0;
+    })
+  );
+
+  const totalWorkouts = exerciseWorkoutCount.reduce(
+    (sum, count) => sum + count,
+    0 as number
+  );
+
+  // Update or create performance record
+  const performanceData = {
+    userId,
+    exerciseId,
+    lastWeight: lastSet.weight,
+    lastWeightUnit: lastSet.weightUnit,
+    lastReps: lastSet.reps,
+    lastSets: totalSets,
+    lastWorkoutDate: workoutDate,
+    personalBest,
+    totalWorkouts,
+  };
+
+  if (existingPerformance) {
+    await ctx.db.patch(existingPerformance._id, performanceData);
+  } else {
+    await ctx.db.insert("exercisePerformance", performanceData);
+  }
 }
