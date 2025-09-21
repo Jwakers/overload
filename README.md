@@ -2,6 +2,12 @@
 
 A Next.js and Convex-powered application to help track gym sets and manage progressive overload.
 
+// TODO next
+
+- Tackle some bugs
+- Set up a landing page and app.etc subdomain for all app functionality (including sign in redirects)
+- Populate data proper from my records
+
 ## 🏋️‍♂️ Development Todo List
 
 ### Bugs
@@ -10,11 +16,12 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] On Iphone we need the UI to avoid the notch at the bottom of the screen
 - [ ] Clicking toasts close the drawers
 - [ ] On saving a workout session, all unsaved exercise sets should be saved first or at least warn that they are not saved
-- [ ] When setting and saving PD and performance data we must account for difference in weight unit
+- [ ] When setting and saving PB and performance data we must account for difference in weight unit
 - [ ] Signed out users can see the nav and start workouts
 - [ ] Edit exercise button does not work (happened when workout sets were all deleted)
 - [ ] Should not be able to delete sets unless the exercise set isActive
 - [ ] Add exercise to split banner shows when no split is selected
+- [ ] When a workout session is deleted, exercise performance is not re-evaluated/removed
 - [ ] No way to sign out
 - [ ] Toast descriptions are too light for example when used for push notification toasts
 - [ ] Notifications section in settings. Green tick is squashed on Iphone
