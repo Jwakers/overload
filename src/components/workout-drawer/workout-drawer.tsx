@@ -576,7 +576,7 @@ function RecommendedExercises({
               variant="outline"
               size="sm"
               aria-label="Show more exercises"
-              onClick={() => setShowIndex(showIndex + 3)}
+              onClick={() => setShowIndex((i) => i + 3)}
             >
               Show more
             </Button>
