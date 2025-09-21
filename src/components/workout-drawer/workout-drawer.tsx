@@ -504,12 +504,15 @@ function RecommendedExercises({
   onSelectExercise: (exerciseId: Id<"exercises">) => void;
   disabled: boolean;
 }) {
+  const [showIndex, setShowIndex] = useState(3);
   if (!split || split.exercises.length === 0) return null;
 
   // Filter out exercises that are already in the current workout
   const recommendedExercises = split.exercises.filter(
     (exercise) => !currentExerciseIds.includes(exercise._id)
   );
+
+  const excessExercises = recommendedExercises.length - showIndex;
 
   if (recommendedExercises.length === 0) {
     return (
@@ -538,7 +541,7 @@ function RecommendedExercises({
         </div>
       </div>
       <div className="space-y-2">
-        {recommendedExercises.slice(0, 3).map((exercise) => (
+        {recommendedExercises.slice(0, showIndex).map((exercise) => (
           <button
             key={exercise._id}
             onClick={() => onSelectExercise(exercise._id)}
@@ -563,10 +566,21 @@ function RecommendedExercises({
             </div>
           </button>
         ))}
-        {recommendedExercises.length > 3 && (
-          <p className="text-sm text-muted-foreground text-center pt-2">
-            +{recommendedExercises.length - 3} more exercises available
-          </p>
+        {recommendedExercises.length > showIndex && (
+          <div className="flex flex-wrap justify-between items-center gap-2">
+            <p className="text-sm text-muted-foreground text-center pt-2">
+              +{excessExercises} more{" "}
+              {excessExercises > 1 ? "exercises" : "exercise"}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Show more exercises"
+              onClick={() => setShowIndex(showIndex + 3)}
+            >
+              Show more
+            </Button>
+          </div>
         )}
       </div>
     </div>
