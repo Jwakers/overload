@@ -29,6 +29,8 @@ import {
 } from "../ui/table";
 import { Textarea } from "../ui/textarea";
 
+// TODO: Split this file up a bit into separate components
+
 // Exercise set form schema
 const exerciseSetSchema = z.object({
   weight: z.string(),
@@ -214,15 +216,12 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
     const { weight: pbWeight, reps: pbReps } = pbToCompare;
 
     // Check if this set exceeds the initial PB
-    const exceedsWeight = weight > pbWeight;
-    const exceedsReps = weight === pbWeight && reps > pbReps;
-    const matchesPB = weight === pbWeight && reps === pbReps;
+    const improvedByWeight = !set.isBodyWeight && weight > pbWeight;
+    const improvedByReps =
+      reps > pbReps && (set.isBodyWeight || weight === pbWeight);
 
-    if ((set.isBodyWeight && exceedsReps) || exceedsWeight) {
-      return "new-pb";
-    } else if (matchesPB) {
-      return "matches-pb";
-    }
+    if (improvedByWeight || improvedByReps) return "new-pb";
+    else if (weight === pbWeight && reps === pbReps) return "matches-pb";
 
     return null;
   };

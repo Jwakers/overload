@@ -276,6 +276,18 @@ export function WorkoutDrawer() {
                   </div>
                 );
               })}
+
+              <RecommendedExercises
+                split={split}
+                currentExerciseIds={
+                  exerciseSets
+                    ?.map((set) => set.exercise?._id)
+                    .filter((id): id is Id<"exercises"> => Boolean(id)) || []
+                }
+                onSelectExercise={handleSelectExercise}
+                disabled={!workoutSessionId}
+              />
+
               <DrawerFooter className="safe-area-inset-bottom sticky bottom-2 inset-x-0 w-full px-0">
                 <div className="flex items-end justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -452,7 +464,7 @@ function ActiveSplit({
   const exercisesToShow = split.exercises.slice(0, MAX_EXERCISES_TO_SHOW);
 
   return (
-    <div className="rounded-lg border bg-muted p-3 space-y-2">
+    <div className="rounded border bg-muted p-3 space-y-2">
       <div className="flex items-center gap-2">
         <Dumbbell className="h-4 w-4 text-brand" />
         <span className="font-medium">{split.name}</span>
@@ -477,6 +489,100 @@ function ActiveSplit({
           )}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function RecommendedExercises({
+  split,
+  currentExerciseIds,
+  onSelectExercise,
+  disabled,
+}: {
+  split: FunctionReturnType<typeof api.splits.getSplitById> | undefined;
+  currentExerciseIds: Id<"exercises">[];
+  onSelectExercise: (exerciseId: Id<"exercises">) => void;
+  disabled: boolean;
+}) {
+  const [showIndex, setShowIndex] = useState(3);
+  if (!split || split.exercises.length === 0) return null;
+
+  // Filter out exercises that are already in the current workout
+  const recommendedExercises = split.exercises.filter(
+    (exercise) => !currentExerciseIds.includes(exercise._id)
+  );
+
+  const excessExercises = recommendedExercises.length - showIndex;
+
+  if (recommendedExercises.length === 0) {
+    return (
+      <div className="rounded border-2 border-dashed bg-muted p-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <Dumbbell className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-muted-foreground">
+            Split Completed
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Great job! You&apos;ve completed all exercises from this split. You
+          can still add more exercises to this session, or update your split.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded border-2 border-dashed border-brand/30 bg-brand/5 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Dumbbell className="h-4 w-4 text-brand" />
+        <span className="font-medium text-brand">Quick start</span>
+        <div className="ml-auto">
+          <Badge variant="outline">From split</Badge>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {recommendedExercises.slice(0, showIndex).map((exercise) => (
+          <button
+            key={exercise._id}
+            onClick={() => onSelectExercise(exercise._id)}
+            disabled={disabled}
+            aria-label={`Add ${exercise.name} to workout`}
+            type="button"
+            className="w-full text-left p-3 rounded border border-brand/20 bg-background hover:bg-brand/5 hover:border-brand/40 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-foreground group-hover:text-brand transition-colors">
+                  {exercise.name}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Add</span>
+                <Plus
+                  size={16}
+                  className="text-brand group-hover:scale-110 transition-transform"
+                />
+              </div>
+            </div>
+          </button>
+        ))}
+        {recommendedExercises.length > showIndex && (
+          <div className="flex flex-wrap justify-between items-center gap-2">
+            <p className="text-sm text-muted-foreground text-center pt-2">
+              +{excessExercises} more{" "}
+              {excessExercises > 1 ? "exercises" : "exercise"}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Show more exercises"
+              onClick={() => setShowIndex((i) => i + 3)}
+            >
+              Show more
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
