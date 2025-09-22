@@ -512,7 +512,6 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
       return;
     }
 
-    setIsPending(true);
     const cleanedNotes = notes?.trim();
     const weightUnit = isBodyWeight
       ? user?.bodyWeightUnit
@@ -523,6 +522,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
       return;
     }
 
+    setIsPending(true);
     toast.promise(
       addSetMutation({
         exerciseSetId,
