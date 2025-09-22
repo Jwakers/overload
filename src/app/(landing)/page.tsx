@@ -8,8 +8,8 @@ const InstallPrompt = dynamic(() => import("@/components/install-prompt"));
 
 export default function HomePage() {
   return (
-    <main className="flex flex-col justify-center mx-auto px-4 sm:px-6 lg:px-8 py-12 h-full safe-area-inset">
-      <div className="container">
+    <main className="flex flex-col justify-center mx-auto px-4 sm:px-6 lg:px-8 py-12 h-full">
+      <div className="container safe-area-inset">
         {/* Hero Section */}
         <div className="text-center">
           <h2 className="text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">

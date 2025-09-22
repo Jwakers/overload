@@ -16,10 +16,10 @@ import {
 } from "../ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
-interface ExerciseFilterProps {
+type ExerciseFilterProps = {
   value: string;
   setValue: (value: string) => void;
-}
+};
 
 export function ExerciseFilter({ value, setValue }: ExerciseFilterProps) {
   const [open, setOpen] = useState(false);

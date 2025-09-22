@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import Footer from "@/components/footer";
-import Navbar from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
 import { cx } from "class-variance-authority";
@@ -78,13 +76,7 @@ export default function RootLayout({
       >
         <ClerkProvider>
           <ConvexClientProvider>
-            <div className="relative min-h-screen grid grid-rows-[1fr_auto_auto] safe-area-inset">
-              <div data-vaul-drawer-wrapper="true">{children}</div>
-              <div className="sticky bottom-0">
-                <Navbar />
-              </div>
-              <Footer />
-            </div>
+            {children}
             <Toaster position="top-right" className="pointer-events-auto" />
           </ConvexClientProvider>
         </ClerkProvider>

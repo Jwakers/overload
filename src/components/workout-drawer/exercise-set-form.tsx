@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { Check, Plus, Weight } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { Control, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { api } from "../../../convex/_generated/api";
@@ -29,8 +29,6 @@ import {
 } from "../ui/table";
 import { Textarea } from "../ui/textarea";
 
-// TODO: Split this file up a bit into separate components
-
 // Exercise set form schema
 const exerciseSetSchema = z.object({
   weight: z.string(),
@@ -44,9 +42,375 @@ const exerciseSetSchema = z.object({
 type ExerciseSetFormData = z.infer<typeof exerciseSetSchema>;
 const DEFAULT_WEIGHT = "lbs";
 
-interface ExerciseSetFormProps {
-  exerciseSetId: Id<"exerciseSets">;
+type PersonalBestInfoProps = {
+  exercisePerformance: Doc<"exercisePerformance"> | null | undefined;
+};
+
+function PersonalBestInfo({ exercisePerformance }: PersonalBestInfoProps) {
+  if (!exercisePerformance) return null;
+
+  return (
+    <div className="bg-muted/50 flex flex-wrap gap-4 justify-between rounded-lg p-3 mb-4 text-xs">
+      <p className="flex items-center gap-2">
+        <span className="font-medium text-muted-foreground">PB:</span>
+        <span className="font-semibold">
+          {exercisePerformance.personalBest?.isBodyWeight
+            ? "BW"
+            : exercisePerformance.personalBest?.weight}
+          {exercisePerformance.personalBest?.isBodyWeight
+            ? ""
+            : exercisePerformance.personalBest?.weightUnit || ""}{" "}
+          &times; {exercisePerformance.personalBest?.reps}
+        </span>
+      </p>
+      {exercisePerformance.lastWeight ? (
+        <p className="flex items-center gap-2">
+          <span className="font-medium text-muted-foreground">Last Time:</span>
+          <span className="font-semibold">
+            {exercisePerformance.lastIsBodyWeight
+              ? "BW"
+              : exercisePerformance.lastWeight}
+            {exercisePerformance.lastIsBodyWeight
+              ? ""
+              : exercisePerformance.lastWeightUnit || ""}{" "}
+            &times; {exercisePerformance.lastReps}
+          </span>{" "}
+          {exercisePerformance.lastSets ? (
+            <span className="font-semibold">
+              | {exercisePerformance.lastSets}{" "}
+              {exercisePerformance.lastSets > 1 ? "sets" : "set"}
+            </span>
+          ) : null}
+        </p>
+      ) : null}
+    </div>
+  );
 }
+
+// Sets Table Component
+type SetsTableProps = {
+  exerciseSet: Doc<"exerciseSets">;
+  getPersonalBestStatus: (
+    set: Doc<"exerciseSets">["sets"][number]
+  ) => string | null;
+  handleDeleteSet: (setId: string) => void;
+  isPending: boolean;
+};
+
+function SetsTable({
+  exerciseSet,
+  getPersonalBestStatus,
+  handleDeleteSet,
+  isPending,
+}: SetsTableProps) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-16">Set</TableHead>
+          <TableHead>Weight</TableHead>
+          <TableHead>Reps</TableHead>
+          <TableHead className="w-16">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {exerciseSet.sets.map((set, i) => {
+          const pbStatus = getPersonalBestStatus(set);
+          const isNewPB = pbStatus === "new-pb";
+          const isMatchesPB = pbStatus === "matches-pb";
+
+          return (
+            <TableRow
+              key={set.id}
+              className={
+                isNewPB
+                  ? "bg-green-50 dark:bg-green-950/20 border-green-200"
+                  : isMatchesPB
+                  ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200"
+                  : ""
+              }
+            >
+              <TableCell className="font-medium">
+                {i + 1}
+                {isNewPB && (
+                  <span className="ml-2 text-xs text-green-600 font-semibold">
+                    NEW PB
+                  </span>
+                )}
+                {isMatchesPB && (
+                  <span className="ml-2 text-xs text-blue-600 font-semibold">
+                    CURRENT PB
+                  </span>
+                )}
+              </TableCell>
+              <TableCell
+                className={cn({
+                  "font-semibold text-blue-700": isMatchesPB,
+                  "font-semibold text-green-700": isNewPB,
+                })}
+              >
+                {set.isBodyWeight ? "BW" : `${set.weight}${set.weightUnit}`}
+              </TableCell>
+              <TableCell
+                className={cn({
+                  "font-semibold text-blue-700": isMatchesPB,
+                  "font-semibold text-green-700": isNewPB,
+                })}
+              >
+                {set.reps}
+              </TableCell>
+              <TableCell className="text-right">
+                <DeleteDialog
+                  disabled={isPending}
+                  onConfirm={() => handleDeleteSet(set.id)}
+                  title="Delete Set"
+                  description="Are you sure you want to delete this set? This action cannot be undone."
+                  confirmButtonText="Delete Set"
+                  triggerTitle="Delete set"
+                />
+              </TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
+  );
+}
+
+// Weight Input Component
+type WeightInputProps = {
+  control: Control<ExerciseSetFormData>;
+  isBodyWeight: boolean;
+  isPending: boolean;
+  user: Doc<"users"> | null | undefined;
+};
+
+function WeightInput({
+  control,
+  isBodyWeight,
+  isPending,
+  user,
+}: WeightInputProps) {
+  return (
+    <FormField
+      control={control}
+      name="weight"
+      disabled={isPending || isBodyWeight}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel className="sr-only">Weight</FormLabel>
+          <FormControl>
+            <div className="relative">
+              {!isBodyWeight ? (
+                <span className="absolute right-4 border-l pl-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                  {user?.preferences?.defaultWeightUnit?.toLowerCase() ||
+                    DEFAULT_WEIGHT}
+                </span>
+              ) : null}
+              <Input
+                min={isBodyWeight ? undefined : 1}
+                placeholder={isBodyWeight ? "Body Weight" : "0"}
+                type="number"
+                inputMode="numeric"
+                {...field}
+                value={isBodyWeight ? "" : field.value}
+                onChange={isBodyWeight ? () => {} : field.onChange}
+              />
+            </div>
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
+
+// Notes Section Component
+type NotesSectionProps = {
+  control: Control<ExerciseSetFormData>;
+  isPending: boolean;
+  showNotes: boolean;
+  setShowNotes: (show: boolean) => void;
+  notesTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
+};
+
+function NotesSection({
+  control,
+  isPending,
+  showNotes,
+  setShowNotes,
+  notesTextareaRef,
+}: NotesSectionProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      {!showNotes ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowNotes(true)}
+          className="self-end"
+        >
+          Add notes to this set
+          <Plus />
+        </Button>
+      ) : (
+        <FormField
+          control={control}
+          name="notes"
+          disabled={isPending}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="sr-only">Notes</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Notes (optional)"
+                  maxLength={255}
+                  {...field}
+                  ref={(e) => {
+                    field.ref(e);
+                    notesTextareaRef.current = e;
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+              <div className="text-xs text-muted-foreground text-right">
+                {field.value?.length || 0}/255
+              </div>
+            </FormItem>
+          )}
+        />
+      )}
+    </div>
+  );
+}
+
+// Set Form Component
+type SetFormProps = {
+  form: ReturnType<typeof useForm<ExerciseSetFormData>>;
+  onSubmit: (values: z.infer<typeof exerciseSetSchema>) => void;
+  exerciseSet: Doc<"exerciseSets">;
+  isPending: boolean;
+  isBodyWeight: boolean;
+  setIsBodyWeight: (isBodyWeight: boolean) => void;
+  user: Doc<"users"> | null | undefined;
+  showNotes: boolean;
+  setShowNotes: (show: boolean) => void;
+  notesTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
+};
+
+function SetForm({
+  form,
+  onSubmit,
+  exerciseSet,
+  isPending,
+  isBodyWeight,
+  setIsBodyWeight,
+  user,
+  showNotes,
+  setShowNotes,
+  notesTextareaRef,
+}: SetFormProps) {
+  return (
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="grid grid-cols-[auto_1fr_1fr_auto] gap-4"
+      >
+        <div className="text-lg grow flex items-center">
+          {exerciseSet?.sets.length ? exerciseSet.sets.length + 1 : 1}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <WeightInput
+            control={form.control}
+            isBodyWeight={isBodyWeight}
+            isPending={isPending}
+            user={user}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <FormField
+            control={form.control}
+            name="reps"
+            disabled={isPending}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="sr-only">Reps</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="0"
+                    inputMode="numeric"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex items-center">
+          <Button
+            type="submit"
+            size="icon"
+            variant="primary"
+            disabled={isPending}
+            className="size-8 rounded-full"
+            title="Save set"
+            aria-label="Save set"
+          >
+            <Check className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="row-start-2 col-span-4 flex justify-between">
+          {/* Body Weight Toggle */}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant={isBodyWeight ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setIsBodyWeight(!isBodyWeight);
+                if (!isBodyWeight) {
+                  // When enabling body weight, clear the weight field
+                  form.setValue("weight", "");
+                }
+              }}
+              className="h-8 px-2 text-xs"
+              disabled={isPending}
+            >
+              <Weight className="h-3 w-3 mr-1" />
+              Body Weight
+            </Button>
+            {isBodyWeight && user?.bodyWeight && (
+              <span className="text-xs text-muted-foreground">
+                ({user.bodyWeight}
+                {user.bodyWeightUnit || user.preferences?.defaultWeightUnit})
+              </span>
+            )}
+          </div>
+
+          <NotesSection
+            control={form.control}
+            isPending={isPending}
+            showNotes={showNotes}
+            setShowNotes={setShowNotes}
+            notesTextareaRef={notesTextareaRef}
+          />
+        </div>
+      </form>
+    </Form>
+  );
+}
+
+type ExerciseSetFormProps = {
+  exerciseSetId: Id<"exerciseSets">;
+};
 
 export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
   // TODO: When weight unit changes, convert the current weight value to the new unit
@@ -84,7 +448,6 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
     );
   });
 
-  const setActiveMutation = useMutation(api.exerciseSets.setActive);
   const deleteSetMutation = useMutation(api.exerciseSets.deleteSet);
 
   const [isPending, startTransition] = useTransition();
@@ -230,295 +593,28 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
     <div className="space-y-3">
       {exerciseSet ? (
         <div>
-          {/* Personal Best Info */}
-          {exercisePerformance && (
-            <div className="bg-muted/50 flex flex-wrap gap-4 justify-between rounded-lg p-3 mb-4 text-xs">
-              <p className="flex items-center gap-2">
-                <span className="font-medium text-muted-foreground">PB:</span>
-                <span className="font-semibold">
-                  {exercisePerformance.personalBest?.isBodyWeight
-                    ? "BW"
-                    : exercisePerformance.personalBest?.weight}
-                  {exercisePerformance.personalBest?.isBodyWeight
-                    ? ""
-                    : exercisePerformance.personalBest?.weightUnit || ""}{" "}
-                  &times; {exercisePerformance.personalBest?.reps}
-                </span>
-              </p>
-              {exercisePerformance.lastWeight ? (
-                <p className="flex items-center gap-2">
-                  <span className="font-medium text-muted-foreground">
-                    Last Time:
-                  </span>
-                  <span className="font-semibold">
-                    {exercisePerformance.lastIsBodyWeight
-                      ? "BW"
-                      : exercisePerformance.lastWeight}
-                    {exercisePerformance.lastIsBodyWeight
-                      ? ""
-                      : exercisePerformance.lastWeightUnit || ""}{" "}
-                    &times; {exercisePerformance.lastReps}
-                  </span>{" "}
-                  {exercisePerformance.lastSets ? (
-                    <span className="font-semibold">
-                      | {exercisePerformance.lastSets}{" "}
-                      {exercisePerformance.lastSets > 1 ? "sets" : "set"}
-                    </span>
-                  ) : null}
-                </p>
-              ) : null}
-            </div>
-          )}
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">Set</TableHead>
-                <TableHead>Weight</TableHead>
-                <TableHead>Reps</TableHead>
-                <TableHead className="w-16">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {exerciseSet.sets.map((set, i) => {
-                const pbStatus = getPersonalBestStatus(set);
-                const isNewPB = pbStatus === "new-pb";
-                const isMatchesPB = pbStatus === "matches-pb";
-
-                return (
-                  <TableRow
-                    key={set.id}
-                    className={
-                      isNewPB
-                        ? "bg-green-50 dark:bg-green-950/20 border-green-200"
-                        : isMatchesPB
-                        ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200"
-                        : ""
-                    }
-                  >
-                    <TableCell className="font-medium">
-                      {i + 1}
-                      {isNewPB && (
-                        <span className="ml-2 text-xs text-green-600 font-semibold">
-                          NEW PB
-                        </span>
-                      )}
-                      {isMatchesPB && (
-                        <span className="ml-2 text-xs text-blue-600 font-semibold">
-                          CURRENT PB
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell
-                      className={cn({
-                        "font-semibold text-blue-700": isMatchesPB,
-                        "font-semibold text-green-700": isNewPB,
-                      })}
-                    >
-                      {set.isBodyWeight
-                        ? "BW"
-                        : `${set.weight}${set.weightUnit}`}
-                    </TableCell>
-                    <TableCell
-                      className={cn({
-                        "font-semibold text-blue-700": isMatchesPB,
-                        "font-semibold text-green-700": isNewPB,
-                      })}
-                    >
-                      {set.reps}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DeleteDialog
-                        disabled={isPending}
-                        onConfirm={() => handleDeleteSet(set.id)}
-                        title="Delete Set"
-                        description="Are you sure you want to delete this set? This action cannot be undone."
-                        confirmButtonText="Delete Set"
-                        triggerTitle="Delete set"
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <PersonalBestInfo exercisePerformance={exercisePerformance} />
+          <SetsTable
+            exerciseSet={exerciseSet}
+            getPersonalBestStatus={getPersonalBestStatus}
+            handleDeleteSet={handleDeleteSet}
+            isPending={isPending}
+          />
         </div>
       ) : null}
-      {exerciseSet?.isActive ? (
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="grid grid-cols-[auto_1fr_1fr_auto] gap-4"
-          >
-            <div className="text-lg  grow flex items-center">
-              {exerciseSet?.sets.length ? exerciseSet.sets.length + 1 : 1}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <FormField
-                control={form.control}
-                name="weight"
-                disabled={isPending || isBodyWeight}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="sr-only">Weight</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        {!isBodyWeight ? (
-                          <span className="absolute right-4 border-l pl-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                            {user?.preferences?.defaultWeightUnit?.toLowerCase() ||
-                              DEFAULT_WEIGHT}
-                          </span>
-                        ) : null}
-                        <Input
-                          min={isBodyWeight ? undefined : 1}
-                          placeholder={isBodyWeight ? "Body Weight" : "0"}
-                          type="number"
-                          inputMode="numeric"
-                          {...field}
-                          value={isBodyWeight ? "" : field.value}
-                          onChange={isBodyWeight ? () => {} : field.onChange}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <FormField
-                control={form.control}
-                name="reps"
-                disabled={isPending}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="sr-only">Reps</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
-                        placeholder="0"
-                        inputMode="numeric"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="flex items-center">
-              <Button
-                type="submit"
-                size="icon"
-                variant="primary"
-                disabled={isPending}
-                className="size-8 rounded-full"
-                title="Save set"
-                aria-label="Save set"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="row-start-2 col-span-4 flex justify-between">
-              {/* Body Weight Toggle */}
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant={isBodyWeight ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setIsBodyWeight(!isBodyWeight);
-                    if (!isBodyWeight) {
-                      // When enabling body weight, clear the weight field
-                      form.setValue("weight", "");
-                    }
-                  }}
-                  className="h-8 px-2 text-xs"
-                  disabled={isPending}
-                >
-                  <Weight className="h-3 w-3 mr-1" />
-                  Body Weight
-                </Button>
-                {isBodyWeight && user?.bodyWeight && (
-                  <span className="text-xs text-muted-foreground">
-                    ({user.bodyWeight}
-                    {user.bodyWeightUnit || user.preferences?.defaultWeightUnit}
-                    )
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {!showNotes ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowNotes(true)}
-                    className="self-end"
-                  >
-                    Add notes to this set
-                    <Plus />
-                  </Button>
-                ) : (
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    disabled={isPending}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="sr-only">Notes</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Notes (optional)"
-                            maxLength={255}
-                            {...field}
-                            ref={(e) => {
-                              field.ref(e);
-                              notesTextareaRef.current = e;
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        <div className="text-xs text-muted-foreground text-right">
-                          {field.value?.length || 0}/255
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </div>
-            </div>
-            <div className="flex gap-2 col-start-1 col-span-4 justify-end">
-              <Button
-                disabled={isPending || !exerciseSet?.sets.length}
-                type="button"
-                onClick={() => {
-                  startTransition(async () => {
-                    toast.promise(
-                      setActiveMutation({
-                        exerciseSetId,
-                        isActive: false,
-                      }),
-                      {
-                        loading: "Finishing exercise…",
-                        success: () => "Exercise finished",
-                        error: "Failed to finish exercise. Please try again.",
-                      }
-                    );
-                  });
-                }}
-              >
-                Finish exercise
-              </Button>
-            </div>
-          </form>
-        </Form>
+      {exerciseSet ? (
+        <SetForm
+          form={form}
+          onSubmit={onSubmit}
+          exerciseSet={exerciseSet}
+          isPending={isPending}
+          isBodyWeight={isBodyWeight}
+          setIsBodyWeight={setIsBodyWeight}
+          user={user}
+          showNotes={showNotes}
+          setShowNotes={setShowNotes}
+          notesTextareaRef={notesTextareaRef}
+        />
       ) : null}
     </div>
   );

@@ -4,11 +4,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { FunctionReturnType } from "convex/server";
 import {
+  Check,
   Dumbbell,
   DumbbellIcon,
-  Edit,
+  MoreHorizontal,
+  Pencil,
   Plus,
   Save,
+  Trash2,
   TrashIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
@@ -16,7 +19,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { DeleteDialog } from "../delete-dialog";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -39,6 +42,12 @@ import {
   DrawerTrigger,
 } from "../ui/drawer";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import {
   Form,
   FormControl,
   FormField,
@@ -51,6 +60,159 @@ import { ExerciseSetForm } from "./exercise-set-form";
 import { SelectExerciseDrawer } from "./select-exercise-drawer";
 import { SplitSelector } from "./split-selector";
 import { WeightUnitToggle } from "./weight-unit-toggle";
+
+// Inactive Exercise Set Card Component
+type InactiveExerciseSetCardProps = {
+  exerciseSet: Doc<"exerciseSets">;
+  handleEdit: () => void;
+  handleDelete: () => void;
+  isPending: boolean;
+};
+
+function InactiveExerciseSetCard({
+  exerciseSet,
+  handleEdit,
+  handleDelete,
+  isPending,
+}: InactiveExerciseSetCardProps) {
+  const totalSets = exerciseSet.sets.length;
+  const totalReps = exerciseSet.sets.reduce((sum, set) => sum + set.reps, 0);
+  const avgWeight =
+    totalSets > 0
+      ? exerciseSet.sets.reduce((sum, set) => sum + set.weight, 0) / totalSets
+      : 0;
+  const isBodyWeight = exerciseSet.sets.some((set) => set.isBodyWeight);
+
+  return (
+    <div className="bg-muted/30 rounded-lg p-3 border">
+      <div className="flex items-center justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 text-sm">
+            {totalSets === 0 ? (
+              <span className="font-medium text-muted-foreground">
+                No sets completed
+              </span>
+            ) : (
+              <>
+                <span className="font-medium text-muted-foreground">
+                  {totalSets} {totalSets === 1 ? "set" : "sets"}
+                </span>
+                <span className="text-muted-foreground">•</span>
+                <span className="font-medium text-muted-foreground">
+                  {totalReps} reps
+                </span>
+                {!isBodyWeight && totalSets > 0 && (
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="font-medium text-muted-foreground">
+                      {avgWeight.toFixed(1)}
+                      {exerciseSet.sets[0]?.weightUnit || "lbs"} avg
+                    </span>
+                  </>
+                )}
+                {isBodyWeight && (
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="font-medium text-muted-foreground">
+                      Body Weight
+                    </span>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isPending}
+              className="h-8 w-8 p-0"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleEdit} disabled={isPending}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+            <DeleteDialog
+              disabled={isPending}
+              onConfirm={handleDelete}
+              title="Delete Exercise Set"
+              description="Are you sure you want to delete this exercise set? This will permanently remove all sets and cannot be undone."
+              confirmButtonText="Delete Exercise Set"
+            >
+              <DropdownMenuItem
+                disabled={isPending}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DeleteDialog>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
+}
+
+// Active Exercise Set Actions Component
+type ActiveExerciseSetActionsProps = {
+  isSaved: boolean;
+  onConcludeEditing: () => void;
+  onDelete: () => void;
+  isPending: boolean;
+};
+
+function ActiveExerciseSetActions({
+  isSaved,
+  onConcludeEditing,
+  onDelete,
+  isPending,
+}: ActiveExerciseSetActionsProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isPending}
+          className="h-8 w-8 p-0"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {isSaved && (
+          <DropdownMenuItem onClick={onConcludeEditing} disabled={isPending}>
+            <Check className="mr-2 h-4 w-4" />
+            Finished editing
+          </DropdownMenuItem>
+        )}
+        <DeleteDialog
+          disabled={isPending}
+          onConfirm={onDelete}
+          title="Delete Exercise"
+          description="Are you sure you want to delete this exercise? All sets will be permanently removed. This action cannot be undone."
+          confirmButtonText="Delete Exercise"
+        >
+          <DropdownMenuItem
+            disabled={isPending}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DeleteDialog>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function WorkoutDrawer() {
   const [open, setOpen] = useState(false);
@@ -65,6 +227,7 @@ export function WorkoutDrawer() {
   );
   const createExerciseSet = useMutation(api.exerciseSets.create);
   const deleteExerciseSet = useMutation(api.exerciseSets.deleteExerciseSet);
+  const setActiveMutation = useMutation(api.exerciseSets.setActive);
   const addExercisesToSplit = useMutation(api.splits.addExercisesToSplit);
 
   const exerciseSets = useQuery(
@@ -95,6 +258,9 @@ export function WorkoutDrawer() {
   const [selectExerciseDialogOpen, setSelectExerciseDialogOpen] =
     useState(false);
   const [isPending, startTransition] = useTransition();
+  const [savedExerciseSets, setSavedExerciseSets] = useState<
+    Set<Id<"exerciseSets">>
+  >(new Set());
 
   useEffect(() => {
     if (workoutSessionId || !open) return;
@@ -121,6 +287,19 @@ export function WorkoutDrawer() {
     // Scroll on open and whenever a new set appears
     scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
   }, [open, exerciseSets?.length]);
+
+  // Track which exercise sets have been saved previously
+  useEffect(() => {
+    if (!exerciseSets) return;
+
+    const allInactiveIds = exerciseSets
+      .filter((es) => !es.isActive)
+      .map((es) => es._id);
+
+    setSavedExerciseSets(
+      (previous) => new Set([...allInactiveIds, ...previous])
+    );
+  }, [exerciseSets]);
 
   const handleAddExerciseToSplit = (
     exerciseId: Id<"exercises"> | undefined
@@ -184,6 +363,36 @@ export function WorkoutDrawer() {
     });
   };
 
+  const handleEditExerciseSet = async (exerciseSetId: Id<"exerciseSets">) => {
+    startTransition(async () => {
+      toast.promise(setActiveMutation({ exerciseSetId, isActive: true }), {
+        loading: "Activating exercise set…",
+        success: () => "Exercise set activated for editing",
+        error: "Failed to activate exercise set. Please try again.",
+      });
+    });
+  };
+
+  const handleConcludeEditing = async (exerciseSetId: Id<"exerciseSets">) => {
+    startTransition(async () => {
+      toast.promise(setActiveMutation({ exerciseSetId, isActive: false }), {
+        loading: "Concluding editing…",
+        success: () => "Exercise set concluded",
+        error: "Failed to conclude editing. Please try again.",
+      });
+    });
+  };
+
+  const handleDeleteExerciseSet = async (exerciseSetId: Id<"exerciseSets">) => {
+    startTransition(async () => {
+      toast.promise(deleteExerciseSet({ exerciseSetId }), {
+        loading: "Deleting exercise set…",
+        success: () => "Exercise set deleted",
+        error: "Failed to delete exercise set. Please try again.",
+      });
+    });
+  };
+
   return (
     <>
       <Drawer open={open} onOpenChange={setOpen}>
@@ -216,7 +425,7 @@ export function WorkoutDrawer() {
             className="container relative overflow-y-auto space-y-4"
           >
             <ActiveSplit split={split} />
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 h-full">
               {exerciseSets?.map((exerciseSet) => {
                 const renderSplitPrompt =
                   split &&
@@ -256,23 +465,30 @@ export function WorkoutDrawer() {
                         {exerciseSet.exercise?.name}
                       </p>
                       {exerciseSet.isActive ? (
-                        <DeleteDialog
-                          disabled={isPending}
-                          onConfirm={() =>
-                            handleDeleteExercise(exerciseSet._id)
+                        <ActiveExerciseSetActions
+                          isSaved={savedExerciseSets.has(exerciseSet._id)}
+                          onConcludeEditing={() =>
+                            handleConcludeEditing(exerciseSet._id)
                           }
-                          title="Delete Exercise"
-                          description="Are you sure you want to delete this exercise? All sets will be permanently removed. This action cannot be undone."
-                          confirmButtonText="Delete Exercise"
-                          triggerTitle="Delete exercise"
+                          onDelete={() => handleDeleteExercise(exerciseSet._id)}
+                          isPending={isPending}
                         />
-                      ) : (
-                        <button title="Start exercise">
-                          <Edit />
-                        </button>
-                      )}
+                      ) : null}
                     </div>
-                    <ExerciseSetForm exerciseSetId={exerciseSet._id} />
+                    {exerciseSet.isActive ? (
+                      <ExerciseSetForm exerciseSetId={exerciseSet._id} />
+                    ) : (
+                      <InactiveExerciseSetCard
+                        exerciseSet={exerciseSet}
+                        handleEdit={() =>
+                          handleEditExerciseSet(exerciseSet._id)
+                        }
+                        handleDelete={() =>
+                          handleDeleteExerciseSet(exerciseSet._id)
+                        }
+                        isPending={isPending}
+                      />
+                    )}
                   </div>
                 );
               })}

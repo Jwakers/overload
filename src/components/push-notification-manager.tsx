@@ -76,7 +76,7 @@ export function PushNotificationManager() {
           <div className="">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-success/20 rounded-full flex items-center justify-center">
+                <div className="min-w-10 h-10 bg-success/20 rounded-full flex items-center justify-center">
                   <CheckCircle className="w-5 h-5 text-success" />
                 </div>
                 <div>

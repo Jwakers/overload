@@ -103,6 +103,10 @@ export default defineSchema({
     ),
   })
     .index("by_workout_session_id", ["workoutSessionId"])
+    .index("by_workout_session_id_and_is_active", [
+      "workoutSessionId",
+      "isActive",
+    ])
     .index("by_workout_session_id_and_exercise_id", [
       "workoutSessionId",
       "exerciseId",
