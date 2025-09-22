@@ -1,29 +1,29 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
-import { useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { api } from "../../../convex/_generated/api";
 
 export function WeightUnitToggle() {
   const user = useQuery(api.users.current);
   const updatePreferences = useMutation(api.users.updatePreferences);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
 
   const handleWeightUnitChange = async (unit: "lbs" | "kg") => {
     // No-op early return to prevent unnecessary writes and UI churn
     if ((user?.preferences?.defaultWeightUnit ?? "lbs") === unit) return;
 
-    startTransition(() => {
-      toast.promise(
-        updatePreferences({ preferences: { defaultWeightUnit: unit } }),
-        {
-          loading: "Updating preferences…",
-          success: `Preferences updated. Weight unit changed to ${unit.toUpperCase()}`,
-          error: "Failed to update weight unit. Please try again.",
-        }
-      );
-    });
+    setIsPending(true);
+    toast.promise(
+      updatePreferences({ preferences: { defaultWeightUnit: unit } }),
+      {
+        loading: "Updating preferences…",
+        success: `Preferences updated. Weight unit changed to ${unit.toUpperCase()}`,
+        error: "Failed to update weight unit. Please try again.",
+        finally: () => setIsPending(false),
+      }
+    );
   };
 
   if (!user)

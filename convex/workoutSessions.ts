@@ -158,6 +158,33 @@ export const complete = mutation({
       throw new Error("Notes must be less than 1000 characters");
     }
 
+    // Get all exercise sets for this workout session
+    const allExerciseSets = await ctx.db
+      .query("exerciseSets")
+      .withIndex("by_workout_session_id", (q) =>
+        q.eq("workoutSessionId", args.workoutSessionId)
+      )
+      .collect();
+
+    // Delete exercise sets with empty sets arrays
+    const exerciseSetsToDelete = allExerciseSets.filter(
+      (exerciseSet) => exerciseSet.sets.length === 0
+    );
+
+    for (const exerciseSet of exerciseSetsToDelete) {
+      await ctx.db.delete(exerciseSet._id);
+    }
+
+    // Auto-finish all remaining active exercise sets
+    const activeExerciseSets = allExerciseSets.filter(
+      (exerciseSet) => exerciseSet.isActive && exerciseSet.sets.length > 0
+    );
+
+    // Set all active exercise sets to inactive
+    for (const exerciseSet of activeExerciseSets) {
+      await ctx.db.patch(exerciseSet._id, { isActive: false });
+    }
+
     await ctx.db.patch(workoutSession._id, {
       isActive: false,
       completedAt: Date.now(),

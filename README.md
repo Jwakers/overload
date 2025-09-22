@@ -5,7 +5,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 // TODO next
 
 - Tackle some bugs
-- Set up a landing page and app.etc subdomain for all app functionality (including sign in redirects)
+- Context menu for deleting and editing exercise sets
 - Populate data proper from my records
 
 ## 🏋️‍♂️ Development Todo List
@@ -14,18 +14,18 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 - [x] Remove cardio exercises from the exercise library
 - [x] On Iphone we need the UI to avoid the notch at the bottom of the screen
-- [ ] Clicking toasts close the drawers
-- [ ] On saving a workout session, all unsaved exercise sets should be saved first or at least warn that they are not saved
-- [ ] When setting and saving PB and performance data we must account for difference in weight unit
-- [ ] Signed out users can see the nav and start workouts
+- [x] Notifications section in settings. Green tick is squashed on Iphone
+- [x] On saving a workout session, all unsaved exercise sets should be saved first or at least warn that they are not saved
+- [x] Signed out users can see the nav and start workouts
 - [ ] Edit exercise button does not work (happened when workout sets were all deleted)
+- [ ] When setting and saving PB and performance data we must account for difference in weight unit
 - [ ] Should not be able to delete sets unless the exercise set isActive
 - [ ] Add exercise to split banner shows when no split is selected
 - [ ] When a workout session is deleted, exercise performance is not re-evaluated/removed
 - [ ] No way to sign out
 - [ ] Toast descriptions are too light for example when used for push notification toasts
-- [ ] Notifications section in settings. Green tick is squashed on Iphone
 - [ ] The PB styling on sets when it comes to body weight is not working as intended
+- [ ] Clicking toasts close the drawers
 
 ### Phase 1: Project Setup & Dependencies
 
@@ -64,7 +64,6 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Do necessary PWA setup as per: https://nextjs.org/docs/app/guides/progressive-web-apps
 - [x] Add section in settings
 - [x] Install and refactor with serwist
-- [ ] Set up a landing page and app.etc subdomain for all app functionality
 - [ ] Set up a cron or background job to check for stale pushSubscriptions and delete them
 - [ ] Send notifications with convex actions instead of server actions
 - [ ] Test on production deployment

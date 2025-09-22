@@ -12,7 +12,7 @@ import {
 } from "./ui/alert-dialog";
 import { Button } from "./ui/button";
 
-interface DeleteDialogProps {
+type DeleteDialogProps = {
   disabled?: boolean;
   onConfirm: () => void;
   title: string;
@@ -20,7 +20,7 @@ interface DeleteDialogProps {
   confirmButtonText: string;
   triggerTitle?: string;
   children?: React.ReactNode;
-}
+};
 
 export function DeleteDialog({
   disabled = false,

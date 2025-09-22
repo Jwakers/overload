@@ -22,6 +22,20 @@ export const create = mutation({
     if (!exercise) {
       throw new Error("Exercise not found");
     }
+
+    // Auto-finish all currently active exercise sets when adding a new exercise
+    const activeExerciseSets = await ctx.db
+      .query("exerciseSets")
+      .withIndex("by_workout_session_id_and_is_active", (q) =>
+        q.eq("workoutSessionId", args.workoutSessionId).eq("isActive", true)
+      )
+      .collect();
+
+    // Set all active exercise sets to inactive
+    for (const exerciseSet of activeExerciseSets) {
+      await ctx.db.patch(exerciseSet._id, { isActive: false });
+    }
+
     const previousSets = await ctx.db
       .query("exerciseSets")
       .withIndex("by_workout_session_id", (q) =>
