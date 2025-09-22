@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { Check, Plus, Weight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Control, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { DeleteDialog } from "../delete-dialog";
@@ -177,114 +177,6 @@ function SetsTable({
   );
 }
 
-// Weight Input Component
-type WeightInputProps = {
-  control: Control<ExerciseSetFormData>;
-  isBodyWeight: boolean;
-  isPending: boolean;
-  user: Doc<"users"> | null | undefined;
-};
-
-function WeightInput({
-  control,
-  isBodyWeight,
-  isPending,
-  user,
-}: WeightInputProps) {
-  return (
-    <FormField
-      control={control}
-      name="weight"
-      disabled={isPending || isBodyWeight}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel className="sr-only">Weight</FormLabel>
-          <FormControl>
-            <div className="relative">
-              {!isBodyWeight ? (
-                <span className="absolute right-4 border-l pl-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                  {user?.preferences?.defaultWeightUnit?.toLowerCase() ||
-                    DEFAULT_WEIGHT}
-                </span>
-              ) : null}
-              <Input
-                min={isBodyWeight ? undefined : 1}
-                placeholder={isBodyWeight ? "Body Weight" : "0"}
-                type="number"
-                inputMode="numeric"
-                {...field}
-                value={isBodyWeight ? "" : field.value}
-                onChange={isBodyWeight ? () => {} : field.onChange}
-              />
-            </div>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-}
-
-// Notes Section Component
-type NotesSectionProps = {
-  control: Control<ExerciseSetFormData>;
-  isPending: boolean;
-  showNotes: boolean;
-  setShowNotes: (show: boolean) => void;
-  notesTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
-};
-
-function NotesSection({
-  control,
-  isPending,
-  showNotes,
-  setShowNotes,
-  notesTextareaRef,
-}: NotesSectionProps) {
-  return (
-    <div className="flex flex-col gap-2">
-      {!showNotes ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowNotes(true)}
-          className="self-end"
-        >
-          Add notes to this set
-          <Plus />
-        </Button>
-      ) : (
-        <FormField
-          control={control}
-          name="notes"
-          disabled={isPending}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="sr-only">Notes</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Notes (optional)"
-                  maxLength={255}
-                  {...field}
-                  ref={(e) => {
-                    field.ref(e);
-                    notesTextareaRef.current = e;
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-              <div className="text-xs text-muted-foreground text-right">
-                {field.value?.length || 0}/255
-              </div>
-            </FormItem>
-          )}
-        />
-      )}
-    </div>
-  );
-}
-
 // Set Form Component
 type SetFormProps = {
   form: ReturnType<typeof useForm<ExerciseSetFormData>>;
@@ -322,11 +214,35 @@ function SetForm({
         </div>
 
         <div className="flex flex-col gap-2">
-          <WeightInput
+          <FormField
             control={form.control}
-            isBodyWeight={isBodyWeight}
-            isPending={isPending}
-            user={user}
+            name="weight"
+            disabled={isPending || isBodyWeight}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="sr-only">Weight</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    {!isBodyWeight ? (
+                      <span className="absolute right-4 border-l pl-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                        {user?.preferences?.defaultWeightUnit?.toLowerCase() ||
+                          DEFAULT_WEIGHT}
+                      </span>
+                    ) : null}
+                    <Input
+                      min={isBodyWeight ? undefined : 1}
+                      placeholder={isBodyWeight ? "Body Weight" : "0"}
+                      type="number"
+                      inputMode="numeric"
+                      {...field}
+                      value={isBodyWeight ? "" : field.value}
+                      onChange={isBodyWeight ? () => {} : field.onChange}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
 
@@ -390,18 +306,54 @@ function SetForm({
             {isBodyWeight && user?.bodyWeight && (
               <span className="text-xs text-muted-foreground">
                 ({user.bodyWeight}
-                {user.bodyWeightUnit || user.preferences?.defaultWeightUnit})
+                {user.bodyWeightUnit ||
+                  user.preferences?.defaultWeightUnit ||
+                  ""}
+                )
               </span>
             )}
           </div>
 
-          <NotesSection
-            control={form.control}
-            isPending={isPending}
-            showNotes={showNotes}
-            setShowNotes={setShowNotes}
-            notesTextareaRef={notesTextareaRef}
-          />
+          <div className="flex flex-col gap-2">
+            {!showNotes ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowNotes(true)}
+                className="self-end"
+              >
+                Add notes to this set
+                <Plus />
+              </Button>
+            ) : (
+              <FormField
+                control={form.control}
+                name="notes"
+                disabled={isPending}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="sr-only">Notes</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Notes (optional)"
+                        maxLength={255}
+                        {...field}
+                        ref={(e) => {
+                          field.ref(e);
+                          notesTextareaRef.current = e;
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <div className="text-xs text-muted-foreground text-right">
+                      {field.value?.length || 0}/255
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
         </div>
       </form>
     </Form>
@@ -448,7 +400,19 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
     );
   });
 
-  const deleteSetMutation = useMutation(api.exerciseSets.deleteSet);
+  const deleteSetMutation = useMutation(
+    api.exerciseSets.deleteSet
+  ).withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.exerciseSets.get, {
+      exerciseSetId: args.exerciseSetId,
+    });
+    if (!current) return;
+    localStore.setQuery(
+      api.exerciseSets.get,
+      { exerciseSetId: args.exerciseSetId },
+      { ...current, sets: current.sets.filter((s) => s.id !== args.setId) }
+    );
+  });
 
   const [isPending, setIsPending] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
@@ -477,6 +441,10 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
         toast.error(
           "Please set your body weight in settings before using body weight exercises"
         );
+        return;
+      }
+      if (user.bodyWeight <= 0) {
+        toast.error("Body weight must be greater than 0");
         return;
       }
 
