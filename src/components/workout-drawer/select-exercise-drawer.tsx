@@ -1,3 +1,5 @@
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import { PlusCircle, X } from "lucide-react";
 import {
@@ -8,8 +10,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {

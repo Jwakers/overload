@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants";
-import { UserButton } from "@clerk/nextjs";
+import { SignInButton, UserButton } from "@clerk/nextjs";
 import { Authenticated, Unauthenticated } from "convex/react";
 import { Dumbbell, LogIn } from "lucide-react";
 import Link from "next/link";
@@ -28,12 +28,12 @@ export default function Header() {
               <UserButton />
             </Authenticated>
             <Unauthenticated>
-              <Button asChild>
-                <Link href={ROUTES.SIGN_IN}>
+              <SignInButton mode="modal">
+                <Button>
                   <LogIn className="w-4 h-4 mr-2" />
                   Sign In
-                </Link>
-              </Button>
+                </Button>
+              </SignInButton>
             </Unauthenticated>
           </nav>
         </div>

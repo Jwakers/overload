@@ -1,8 +1,8 @@
 "use client";
 
+import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
 import { formatDistanceToNow } from "date-fns";
-import { api } from "../../../../convex/_generated/api";
 
 export default function DashboardPage() {
   const workoutSessions = useQuery(api.workoutSessions.getListWithExercises);

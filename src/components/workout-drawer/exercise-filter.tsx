@@ -1,10 +1,7 @@
+import { getAllMuscleGroups, MUSCLE_GROUPS } from "@/convex/lib/muscle_groups";
 import { cn } from "@/lib/utils";
 import { CheckIcon, Filter as FilterIcon } from "lucide-react";
 import { useState } from "react";
-import {
-  getAllMuscleGroups,
-  MUSCLE_GROUPS,
-} from "../../../convex/lib/muscle_groups";
 import { Button } from "../ui/button";
 import {
   Command,

@@ -1,8 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { ROUTES } from "@/constants";
-import { ArrowRight, BarChart3, Dumbbell, TrendingUp } from "lucide-react";
+import { BarChart3, Dumbbell, TrendingUp } from "lucide-react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
+import Hero from "./_components/hero";
 
 const InstallPrompt = dynamic(() => import("@/components/install-prompt"));
 
@@ -11,27 +9,7 @@ export default function HomePage() {
     <main className="flex flex-col justify-center mx-auto px-4 sm:px-6 lg:px-8 py-12 h-full">
       <div className="container safe-area-inset">
         {/* Hero Section */}
-        <div className="text-center">
-          <h2 className="text-4xl font-bold text-foreground sm:text-5xl md:text-6xl">
-            Welcome to <span className="text-brand">Overload</span>
-          </h2>
-          <p className="mt-6 text-xl text-muted-foreground max-w-3xl mx-auto">
-            Your fitness journey starts here. Track your workouts, monitor your
-            progress, and achieve your goals with our comprehensive fitness
-            platform.
-          </p>
-          <div className="mt-10 flex justify-center space-x-4">
-            <Button asChild size="lg" className="px-8">
-              <Link href={ROUTES.SIGN_IN}>
-                Get Started
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" className="px-8">
-              Learn More
-            </Button>
-          </div>
-        </div>
+        <Hero />
 
         {/* Features Section */}
         <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">

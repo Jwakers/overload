@@ -1,7 +1,6 @@
 import Footer from "@/components/footer";
 import Header from "@/components/header";
 import Navbar from "@/components/navbar";
-import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({
   children,
@@ -18,7 +17,6 @@ export default function RootLayout({
         </div>
         <Footer />
       </div>
-      <Toaster position="top-right" className="pointer-events-auto" />
     </div>
   );
 }

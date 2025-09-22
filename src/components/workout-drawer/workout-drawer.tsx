@@ -1,4 +1,6 @@
 import { MAX_EXERCISES_TO_SHOW } from "@/constants";
+import { api } from "@/convex/_generated/api";
+import { Doc, Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
@@ -14,12 +16,10 @@ import {
   Trash2,
   TrashIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
-import { api } from "../../../convex/_generated/api";
-import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { DeleteDialog } from "../delete-dialog";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -257,7 +257,7 @@ export function WorkoutDrawer() {
 
   const [selectExerciseDialogOpen, setSelectExerciseDialogOpen] =
     useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const [savedExerciseSets, setSavedExerciseSets] = useState<
     Set<Id<"exerciseSets">>
   >(new Set());
@@ -305,6 +305,7 @@ export function WorkoutDrawer() {
     exerciseId: Id<"exercises"> | undefined
   ) => {
     if (!split || !exerciseId) return;
+    setIsPending(true);
     toast.promise(
       addExercisesToSplit({
         splitId: split._id,
@@ -314,82 +315,83 @@ export function WorkoutDrawer() {
         loading: "Adding exercise to split…",
         success: () => `Exercise added to ${split.name}`,
         error: "Failed to add exercise to split. Please try again.",
+        finally: () => setIsPending(false),
       }
     );
   };
 
   const handleSelectExercise = async (exerciseId: Id<"exercises">) => {
     if (!workoutSessionId) return;
-    startTransition(async () => {
-      toast.promise(
-        createExerciseSet({
-          workoutSessionId,
-          exerciseId,
-        }),
-        {
-          loading: "Adding exercise…",
-          success: () => {
-            setSelectExerciseDialogOpen(false);
-            return "Exercise added";
-          },
-          error: "Failed to add exercise. Please try again.",
-        }
-      );
-    });
+    setIsPending(true);
+    toast.promise(
+      createExerciseSet({
+        workoutSessionId,
+        exerciseId,
+      }),
+      {
+        loading: "Adding exercise…",
+        success: () => {
+          setSelectExerciseDialogOpen(false);
+          return "Exercise added";
+        },
+        error: "Failed to add exercise. Please try again.",
+        finally: () => setIsPending(false),
+      }
+    );
   };
 
   const handleDeleteWorkout = async () => {
     if (!workoutSessionId) return;
-    startTransition(async () => {
-      toast.promise(deleteWorkoutSession({ id: workoutSessionId }), {
-        loading: "Deleting workout…",
-        success: () => {
-          setOpen(false);
-          setWorkoutSessionId(null);
-          return "Workout deleted";
-        },
-        error: "Failed to delete workout. Please try again.",
-      });
+    setIsPending(true);
+    toast.promise(deleteWorkoutSession({ id: workoutSessionId }), {
+      loading: "Deleting workout…",
+      success: () => {
+        setOpen(false);
+        setWorkoutSessionId(null);
+        return "Workout deleted";
+      },
+      error: "Failed to delete workout. Please try again.",
+      finally: () => setIsPending(false),
     });
   };
 
   const handleDeleteExercise = async (exerciseSetId: Id<"exerciseSets">) => {
-    startTransition(async () => {
-      toast.promise(deleteExerciseSet({ exerciseSetId }), {
-        loading: "Deleting exercise…",
-        success: () => "Exercise removed from workout",
-        error: "Failed to remove exercise. Please try again.",
-      });
+    setIsPending(true);
+    toast.promise(deleteExerciseSet({ exerciseSetId }), {
+      loading: "Deleting exercise…",
+      success: () => "Exercise removed from workout",
+      error: "Failed to remove exercise. Please try again.",
+      finally: () => setIsPending(false),
     });
   };
 
   const handleEditExerciseSet = async (exerciseSetId: Id<"exerciseSets">) => {
-    startTransition(async () => {
-      toast.promise(setActiveMutation({ exerciseSetId, isActive: true }), {
-        loading: "Activating exercise set…",
-        success: () => "Exercise set activated for editing",
-        error: "Failed to activate exercise set. Please try again.",
-      });
+    setIsPending(true);
+    toast.promise(setActiveMutation({ exerciseSetId, isActive: true }), {
+      loading: "Activating exercise set…",
+      success: () => "Exercise set activated for editing",
+      error: "Failed to activate exercise set. Please try again.",
+      finally: () => setIsPending(false),
     });
   };
 
   const handleConcludeEditing = async (exerciseSetId: Id<"exerciseSets">) => {
-    startTransition(async () => {
-      toast.promise(setActiveMutation({ exerciseSetId, isActive: false }), {
-        loading: "Concluding editing…",
-        success: () => "Exercise set concluded",
-        error: "Failed to conclude editing. Please try again.",
-      });
+    setIsPending(true);
+    toast.promise(setActiveMutation({ exerciseSetId, isActive: false }), {
+      loading: "Concluding editing…",
+      success: () => "Exercise set concluded",
+      error: "Failed to conclude editing. Please try again.",
+      finally: () => setIsPending(false),
     });
   };
 
   const handleDeleteExerciseSet = async (exerciseSetId: Id<"exerciseSets">) => {
-    startTransition(async () => {
-      toast.promise(deleteExerciseSet({ exerciseSetId }), {
-        loading: "Deleting exercise set…",
-        success: () => "Exercise set deleted",
-        error: "Failed to delete exercise set. Please try again.",
-      });
+    setIsPending(true);
+    toast.promise(deleteExerciseSet({ exerciseSetId }), {
+      loading: "Deleting exercise set…",
+      success: () => "Exercise set deleted",
+      error: "Failed to delete exercise set. Please try again.",
+      finally: () => setIsPending(false),
     });
   };
 

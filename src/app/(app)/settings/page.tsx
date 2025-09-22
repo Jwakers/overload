@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { api } from "@/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { Bell, Edit, Save, User, Weight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { api } from "../../../../convex/_generated/api";
 
 export default function SettingsPage() {
   const user = useQuery(api.users.current);

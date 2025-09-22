@@ -1,13 +1,13 @@
+import { api } from "@/convex/_generated/api";
+import { Doc, Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { Check, Plus, Weight } from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Control, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { api } from "../../../convex/_generated/api";
-import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { DeleteDialog } from "../delete-dialog";
 import { Button } from "../ui/button";
 import {
@@ -450,7 +450,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
 
   const deleteSetMutation = useMutation(api.exerciseSets.deleteSet);
 
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [isBodyWeight, setIsBodyWeight] = useState(false);
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -512,45 +512,45 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
       return;
     }
 
-    startTransition(() => {
-      const cleanedNotes = notes?.trim();
-      const weightUnit = isBodyWeight
-        ? user?.bodyWeightUnit
-        : user?.preferences?.defaultWeightUnit;
+    setIsPending(true);
+    const cleanedNotes = notes?.trim();
+    const weightUnit = isBodyWeight
+      ? user?.bodyWeightUnit
+      : user?.preferences?.defaultWeightUnit;
 
-      if (!weightUnit) {
-        toast.error("Please set your default weight unit");
-        return;
+    if (!weightUnit) {
+      toast.error("Please set your default weight unit");
+      return;
+    }
+
+    toast.promise(
+      addSetMutation({
+        exerciseSetId,
+        weightUnit,
+        set: { weight, reps, notes: cleanedNotes || undefined },
+        isBodyWeight,
+      }),
+      {
+        loading: "Saving set…",
+        success: () => {
+          form.resetField("reps");
+          form.resetField("notes");
+          setShowNotes(false);
+          return "Set saved";
+        },
+        error: "Failed to add set. Please try again.",
+        finally: () => setIsPending(false),
       }
-
-      toast.promise(
-        addSetMutation({
-          exerciseSetId,
-          weightUnit,
-          set: { weight, reps, notes: cleanedNotes || undefined },
-          isBodyWeight,
-        }),
-        {
-          loading: "Saving set…",
-          success: () => {
-            form.resetField("reps");
-            form.resetField("notes");
-            setShowNotes(false);
-            return "Set saved";
-          },
-          error: "Failed to add set. Please try again.",
-        }
-      );
-    });
+    );
   }
 
   const handleDeleteSet = async (setId: string) => {
-    startTransition(async () => {
-      toast.promise(deleteSetMutation({ exerciseSetId, setId }), {
-        loading: "Deleting set…",
-        success: () => "Set removed",
-        error: "Failed to remove set. Please try again.",
-      });
+    setIsPending(true);
+    toast.promise(deleteSetMutation({ exerciseSetId, setId }), {
+      loading: "Deleting set…",
+      success: () => "Set removed",
+      error: "Failed to remove set. Please try again.",
+      finally: () => setIsPending(false),
     });
   };
 
