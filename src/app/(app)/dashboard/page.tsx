@@ -1,10 +1,10 @@
 "use client";
 
 import { api } from "@/convex/_generated/api";
-import { useQuery } from "convex/react";
+import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { formatDistanceToNow } from "date-fns";
 
-export default function DashboardPage() {
+function DashboardContent() {
   const workoutSessions = useQuery(api.workoutSessions.getListWithExercises);
 
   if (!workoutSessions) {
@@ -114,5 +114,25 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <>
+      <Authenticated>
+        <DashboardContent />
+      </Authenticated>
+      <Unauthenticated>
+        <div className="container px-4 py-8">
+          <h1 className="text-3xl font-bold text-slate-900 mb-6">Dashboard</h1>
+          <div className="bg-white rounded-lg shadow p-6">
+            <p className="text-slate-600">
+              Please sign in to view your dashboard.
+            </p>
+          </div>
+        </div>
+      </Unauthenticated>
+    </>
   );
 }
