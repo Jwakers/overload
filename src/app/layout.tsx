@@ -33,10 +33,28 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: APP_DEFAULT_TITLE,
-    // startUpImage: [],
+    startupImage: [
+      {
+        url: "/apple-touch-icon.png",
+        media:
+          "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
+      },
+    ],
   },
   formatDetection: {
     telephone: false,
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "msapplication-TileColor": "#000000",
+    "msapplication-tap-highlight": "no",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+    "apple-mobile-web-app-title": "Overload",
   },
   openGraph: {
     type: "website",

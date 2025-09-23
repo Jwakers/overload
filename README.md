@@ -4,9 +4,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 // TODO next
 
-- Tackle some bugs
-- Context menu for deleting and editing exercise sets
 - Populate data proper from my records
+- Review readme and prioritize next steps
 
 ## 🏋️‍♂️ Development Todo List
 
