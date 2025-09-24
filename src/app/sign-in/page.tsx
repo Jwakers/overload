@@ -3,28 +3,25 @@
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants";
 import { SignInButton } from "@clerk/nextjs";
-import { Authenticated, Unauthenticated } from "convex/react";
+import { Authenticated, Unauthenticated, useConvexAuth } from "convex/react";
 import { ArrowRight, Dumbbell, LogIn } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 export default function SignInPage() {
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect_url") || ROUTES.DASHBOARD;
+  const auth = useConvexAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (auth.isAuthenticated) {
+      router.push(redirectUrl);
+    }
+  }, [auth, redirectUrl, router]);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="bg-background border-b border-border">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href={ROUTES.HOME} className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
-                <Dumbbell className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-foreground">
-                Overload
-              </span>
-            </Link>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8 text-center">
@@ -58,6 +55,9 @@ export default function SignInPage() {
                 <p className="text-muted-foreground">
                   Your fitness journey starts here. Sign in to track your
                   workouts, monitor your progress, and achieve your goals.
+                </p>
+                <p className="text-muted-foreground">
+                  This page should redirect automatically to the dashboard.
                 </p>
               </div>
 

@@ -12,10 +12,10 @@ export default function RootLayout({
       <Header />
       <div className="relative min-h-screen grid grid-rows-[1fr_auto_auto] safe-area-inset">
         <div data-vaul-drawer-wrapper="true">{children}</div>
+        <Footer />
         <div className="sticky bottom-0">
           <Navbar />
         </div>
-        <Footer />
       </div>
     </div>
   );

@@ -95,7 +95,14 @@ export default function RootLayout({
         <ClerkProvider>
           <ConvexClientProvider>
             {children}
-            <Toaster position="top-right" className="pointer-events-auto" />
+            <Toaster
+              position="top-center"
+              className="pointer-events-auto"
+              mobileOffset={{
+                top: 38,
+              }}
+              richColors
+            />
           </ConvexClientProvider>
         </ClerkProvider>
       </body>

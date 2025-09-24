@@ -1,4 +1,5 @@
 import { Trash2 } from "lucide-react";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,8 +32,15 @@ export function DeleteDialog({
   triggerTitle = "Delete",
   children,
 }: DeleteDialogProps) {
+  const [open, setOpen] = useState(false);
+
+  const handleConfirm = () => {
+    onConfirm();
+    setOpen(false);
+  };
+
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         {children || (
           <Button
@@ -51,9 +59,11 @@ export function DeleteDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={() => setOpen(false)}>
+            Cancel
+          </AlertDialogCancel>
           <Button variant="destructive" asChild>
-            <AlertDialogAction onClick={onConfirm}>
+            <AlertDialogAction onClick={handleConfirm}>
               {confirmButtonText}
             </AlertDialogAction>
           </Button>

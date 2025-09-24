@@ -13,14 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { api } from "@/convex/_generated/api";
 import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { format } from "date-fns";
-import {
-  Activity,
-  Calendar,
-  Clock,
-  Dumbbell,
-  Target,
-  TrendingUp,
-} from "lucide-react";
+import { Calendar, Clock, Dumbbell, Target, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 function DashboardContent() {
@@ -59,9 +52,6 @@ function DashboardContent() {
   const completedWorkouts = workoutSessions.filter(
     (session) => !session.isActive
   );
-
-  const activeWorkout = workoutSessions.find((session) => session.isActive);
-
   // Calculate stats
   const totalWorkouts = completedWorkouts.length;
   const totalExercises = completedWorkouts.reduce(
@@ -100,7 +90,7 @@ function DashboardContent() {
   }
 
   return (
-    <div className="container px-4 py-8 max-w-6xl mx-auto space-y-8">
+    <div className="container px-4 py-4 max-w-6xl mx-auto space-y-8">
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -111,22 +101,6 @@ function DashboardContent() {
             Ready to crush your next workout?
           </p>
         </div>
-
-        {activeWorkout ? (
-          <Link href="/workout">
-            <Button size="lg" variant="primary">
-              <Activity className="w-5 h-5 mr-2" />
-              Continue Workout
-            </Button>
-          </Link>
-        ) : (
-          <Link href="/workout">
-            <Button size="lg" variant="primary">
-              <Dumbbell className="w-5 h-5 mr-2" />
-              Start Workout
-            </Button>
-          </Link>
-        )}
       </div>
 
       {/* Stats Cards */}

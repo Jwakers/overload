@@ -16,6 +16,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Notifications section in settings. Green tick is squashed on Iphone
 - [x] On saving a workout session, all unsaved exercise sets should be saved first or at least warn that they are not saved
 - [x] Signed out users can see the nav and start workouts
+- [ ] Splits should not be active/inactive, they should just get deleted and removed from workout sessions that had them assigned.
 - [ ] Edit exercise button does not work (happened when workout sets were all deleted)
 - [ ] When setting and saving PB and performance data we must account for difference in weight unit
 - [ ] Should not be able to delete sets unless the exercise set isActive
