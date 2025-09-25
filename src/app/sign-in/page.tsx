@@ -3,25 +3,19 @@
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants";
 import { SignInButton } from "@clerk/nextjs";
-import { Authenticated, Unauthenticated, useConvexAuth } from "convex/react";
+import { Authenticated, Unauthenticated } from "convex/react";
 import { ArrowRight, Dumbbell, LogIn } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { Suspense } from "react";
+import { SignInRedirect } from "./_components/sign-in-redirect";
+
 export default function SignInPage() {
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect_url") || ROUTES.DASHBOARD;
-  const auth = useConvexAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (auth.isAuthenticated) {
-      router.push(redirectUrl);
-    }
-  }, [auth, redirectUrl, router]);
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <Suspense fallback={null}>
+        <SignInRedirect />
+      </Suspense>
+
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8 text-center">
