@@ -14,7 +14,6 @@ import {
   Plus,
   Save,
   Trash2,
-  TrashIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -58,8 +57,9 @@ import {
 import { Textarea } from "../ui/textarea";
 import { ExerciseSetForm } from "./exercise-set-form";
 import { SelectExerciseDrawer } from "./select-exercise-drawer";
-import { SplitSelector } from "./split-selector";
+import { SplitSelectionGrid } from "./split-selection-grid";
 import { WeightUnitToggle } from "./weight-unit-toggle";
+import { WorkoutActionsMenu } from "./workout-actions-menu";
 
 // Inactive Exercise Set Card Component
 type InactiveExerciseSetCardProps = {
@@ -149,6 +149,7 @@ function InactiveExerciseSetCard({
               <DropdownMenuItem
                 disabled={isPending}
                 className="text-destructive focus:text-destructive"
+                onSelect={(e) => e.preventDefault()}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete
@@ -204,6 +205,7 @@ function ActiveExerciseSetActions({
           <DropdownMenuItem
             disabled={isPending}
             className="text-destructive focus:text-destructive"
+            onSelect={(e) => e.preventDefault()}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
@@ -414,9 +416,11 @@ export function WorkoutDrawer() {
             <DrawerTitle className="sr-only">New Workout</DrawerTitle>
             <div className="flex justify-between items-center gap-2">
               {workoutSessionId && (
-                <SplitSelector
+                <WorkoutActionsMenu
                   workoutSessionId={workoutSessionId}
                   selectedSplitId={workoutSession?.splitId}
+                  onDeleteWorkout={handleDeleteWorkout}
+                  isPending={isPending}
                 />
               )}
               <WeightUnitToggle />
@@ -428,6 +432,18 @@ export function WorkoutDrawer() {
           >
             <ActiveSplit split={split} />
             <div className="flex flex-col gap-2 h-full">
+              {/* Show split selection grid when no exercises are added */}
+              {workoutSessionId &&
+                (!exerciseSets || exerciseSets.length === 0) &&
+                !split && (
+                  <SplitSelectionGrid
+                    workoutSessionId={workoutSessionId}
+                    onSplitSelected={() => {
+                      // The split will be updated via the mutation, no need to do anything here
+                    }}
+                  />
+                )}
+
               {exerciseSets?.map((exerciseSet) => {
                 const renderSplitPrompt =
                   split &&
@@ -445,15 +461,22 @@ export function WorkoutDrawer() {
                   >
                     {/* Banner to add this exercise to a split */}
                     {renderSplitPrompt ? (
-                      <div className="bg-muted text-sm p-2 rounded flex gap-2 justify-between items-center">
-                        <p>
-                          Add this exercise to split:{" "}
-                          <span className="font-semibold">{split?.name}</span>?
-                        </p>
+                      <div className="relative bg-gradient-to-r from-brand/10 to-brand/5 border border-brand/30 text-sm p-3 rounded-lg flex gap-3 justify-between items-center shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-brand rounded-full animate-pulse"></div>
+                          <p className="text-foreground">
+                            Add this exercise to split:{" "}
+                            <span className="font-semibold text-brand">
+                              {split?.name}
+                            </span>
+                            ?
+                          </p>
+                        </div>
                         <Button
-                          variant="outline"
+                          variant="default"
                           size="sm"
                           disabled={isPending}
+                          className="bg-brand hover:bg-brand/90 text-brand-foreground shadow-sm"
                           onClick={() =>
                             handleAddExerciseToSplit(exerciseSet.exercise?._id)
                           }
@@ -465,6 +488,9 @@ export function WorkoutDrawer() {
                     <div className="gap-2 flex justify-between items-center">
                       <p className="font-semibold">
                         {exerciseSet.exercise?.name}
+                        {exerciseSet.exercise?.equipment
+                          ? ` - ${exerciseSet.exercise?.equipment}`
+                          : ""}
                       </p>
                       {exerciseSet.isActive ? (
                         <ActiveExerciseSetActions
@@ -507,37 +533,21 @@ export function WorkoutDrawer() {
               />
 
               <DrawerFooter className="safe-area-inset-bottom sticky bottom-2 inset-x-0 w-full px-0">
-                <div className="flex items-end justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <DeleteDialog
-                      onConfirm={handleDeleteWorkout}
-                      title="Delete Workout"
-                      description="Are you sure you want to delete this workout? This action cannot be undone."
-                      confirmButtonText="Delete"
-                    >
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        title="Delete Workout"
-                      >
-                        <TrashIcon size={18} />
-                      </Button>
-                    </DeleteDialog>
+                <div className="flex items-center justify-between gap-2">
+                  <SaveWorkoutDialog
+                    isPending={isPending}
+                    disabled={!exerciseSets?.length}
+                    workoutSessionId={workoutSessionId}
+                    onComplete={() => {
+                      setOpen(false);
+                      setWorkoutSessionId(null);
+                    }}
+                  />
 
-                    <SaveWorkoutDialog
-                      isPending={isPending}
-                      disabled={!exerciseSets?.length}
-                      workoutSessionId={workoutSessionId}
-                      onComplete={() => {
-                        setOpen(false);
-                        setWorkoutSessionId(null);
-                      }}
-                    />
-                  </div>
                   <button
                     type="button"
                     className={cn(
-                      "bg-brand text-brand-foreground flex items-center gap-2 p-3 rounded-full shadow",
+                      "bg-brand text-brand-foreground flex items-center gap-2 px-4 py-3 rounded-full shadow-lg flex-1 max-w-50 justify-center",
                       !workoutSessionId && "opacity-50 cursor-not-allowed"
                     )}
                     onClick={() => setSelectExerciseDialogOpen(true)}
@@ -613,8 +623,15 @@ function SaveWorkoutDialog(props: {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button disabled={isPending || disabled} title="Save Workout">
-          <Save /> Save workout
+        <Button
+          disabled={isPending || disabled}
+          title="Save Workout"
+          variant="secondary"
+          size="lg"
+        >
+          <Save size={16} />
+          <span className="hidden sm:inline">Save workout</span>
+          <span className="sm:hidden">Save</span>
         </Button>
       </DialogTrigger>
       <DialogContent autoFocus={false}>
@@ -686,12 +703,6 @@ function ActiveSplit({
       <div className="flex items-center gap-2">
         <Dumbbell className="h-4 w-4 text-brand" />
         <span className="font-medium">{split.name}</span>
-        <Badge
-          variant={split.isActive ? "default" : "secondary"}
-          className="ml-auto"
-        >
-          {split.isActive ? "Active" : "Inactive"}
-        </Badge>
       </div>
       {exercisesToShow.length > 0 ? (
         <div className="flex flex-wrap gap-1">
@@ -759,31 +770,31 @@ function RecommendedExercises({
         </div>
       </div>
       <div className="space-y-2">
-        {recommendedExercises.slice(0, showIndex).map((exercise) => (
-          <button
-            key={exercise._id}
-            onClick={() => onSelectExercise(exercise._id)}
-            disabled={disabled}
-            aria-label={`Add ${exercise.name} to workout`}
-            type="button"
-            className="w-full text-left p-3 rounded border border-brand/20 bg-background hover:bg-brand/5 hover:border-brand/40 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-foreground group-hover:text-brand transition-colors">
-                  {exercise.name}
-                </p>
+        <div className="flex flex-col gap-2">
+          {recommendedExercises.slice(0, showIndex).map((exercise) => (
+            <button
+              key={exercise._id}
+              onClick={() => onSelectExercise(exercise._id)}
+              disabled={disabled}
+              aria-label={`Add ${exercise.name} to workout`}
+              type="button"
+              className="text-left p-3 rounded border border-brand/20 bg-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-foreground">{exercise.name}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Add</span>
+                  <Plus
+                    size={16}
+                    className="text-brand group-hover:scale-110 transition-transform"
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Add</span>
-                <Plus
-                  size={16}
-                  className="text-brand group-hover:scale-110 transition-transform"
-                />
-              </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          ))}
+        </div>
         {recommendedExercises.length > showIndex && (
           <div className="flex flex-wrap justify-between items-center gap-2">
             <p className="text-sm text-muted-foreground text-center pt-2">

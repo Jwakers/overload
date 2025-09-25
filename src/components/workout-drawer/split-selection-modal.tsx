@@ -13,21 +13,23 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import { Edit, Plus } from "lucide-react";
+import { Edit } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CreateSplitDialog } from "./create-split-dialog";
 import { SplitListItem } from "./split-list-item";
 
-type SplitSelectorProps = {
+type SplitSelectionModalProps = {
   workoutSessionId: Id<"workoutSessions">;
   selectedSplitId: Id<"splits"> | undefined;
+  trigger?: React.ReactNode;
 };
 
-export function SplitSelector({
+export function SplitSelectionModal({
   workoutSessionId,
   selectedSplitId,
-}: SplitSelectorProps) {
+  trigger,
+}: SplitSelectionModalProps) {
   const [open, setOpen] = useState(false);
   const splits = useQuery(api.splits.getSplits);
   const setSplitMutation = useMutation(api.workoutSessions.updateSplit);
@@ -52,23 +54,16 @@ export function SplitSelector({
     );
   };
 
+  const defaultTrigger = (
+    <Button variant="outline" size="sm" className="h-8 px-3">
+      <Edit size={16} className="mr-2" />
+      All Splits
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setOpen(true)}
-          className="h-8 px-3"
-        >
-          {selectedSplitId ? (
-            <Edit size={24} className={"text-brand"} />
-          ) : (
-            <Plus size={24} className={"text-brand"} />
-          )}
-          {selectedSplitId ? "Change Split" : "Select Split"}
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Select Workout Split</DialogTitle>
