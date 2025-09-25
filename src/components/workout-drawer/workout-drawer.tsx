@@ -488,6 +488,9 @@ export function WorkoutDrawer() {
                     <div className="gap-2 flex justify-between items-center">
                       <p className="font-semibold">
                         {exerciseSet.exercise?.name}
+                        {exerciseSet.exercise?.equipment
+                          ? ` - ${exerciseSet.exercise?.equipment}`
+                          : ""}
                       </p>
                       {exerciseSet.isActive ? (
                         <ActiveExerciseSetActions
@@ -530,22 +533,21 @@ export function WorkoutDrawer() {
               />
 
               <DrawerFooter className="safe-area-inset-bottom sticky bottom-2 inset-x-0 w-full px-0">
-                <div className="flex items-end justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <SaveWorkoutDialog
-                      isPending={isPending}
-                      disabled={!exerciseSets?.length}
-                      workoutSessionId={workoutSessionId}
-                      onComplete={() => {
-                        setOpen(false);
-                        setWorkoutSessionId(null);
-                      }}
-                    />
-                  </div>
+                <div className="flex items-center justify-between gap-2">
+                  <SaveWorkoutDialog
+                    isPending={isPending}
+                    disabled={!exerciseSets?.length}
+                    workoutSessionId={workoutSessionId}
+                    onComplete={() => {
+                      setOpen(false);
+                      setWorkoutSessionId(null);
+                    }}
+                  />
+
                   <button
                     type="button"
                     className={cn(
-                      "bg-brand text-brand-foreground flex items-center gap-2 p-3 rounded-full shadow",
+                      "bg-brand text-brand-foreground flex items-center gap-2 px-4 py-3 rounded-full shadow-lg flex-1 max-w-50 justify-center",
                       !workoutSessionId && "opacity-50 cursor-not-allowed"
                     )}
                     onClick={() => setSelectExerciseDialogOpen(true)}
@@ -621,8 +623,15 @@ function SaveWorkoutDialog(props: {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button disabled={isPending || disabled} title="Save Workout">
-          <Save /> Save workout
+        <Button
+          disabled={isPending || disabled}
+          title="Save Workout"
+          variant="secondary"
+          size="lg"
+        >
+          <Save size={16} />
+          <span className="hidden sm:inline">Save workout</span>
+          <span className="sm:hidden">Save</span>
         </Button>
       </DialogTrigger>
       <DialogContent autoFocus={false}>
@@ -761,31 +770,31 @@ function RecommendedExercises({
         </div>
       </div>
       <div className="space-y-2">
-        {recommendedExercises.slice(0, showIndex).map((exercise) => (
-          <button
-            key={exercise._id}
-            onClick={() => onSelectExercise(exercise._id)}
-            disabled={disabled}
-            aria-label={`Add ${exercise.name} to workout`}
-            type="button"
-            className="w-full text-left p-3 rounded border border-brand/20 bg-background hover:bg-brand/5 hover:border-brand/40 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-foreground group-hover:text-brand transition-colors">
-                  {exercise.name}
-                </p>
+        <div className="flex flex-col gap-2">
+          {recommendedExercises.slice(0, showIndex).map((exercise) => (
+            <button
+              key={exercise._id}
+              onClick={() => onSelectExercise(exercise._id)}
+              disabled={disabled}
+              aria-label={`Add ${exercise.name} to workout`}
+              type="button"
+              className="text-left p-3 rounded border border-brand/20 bg-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-foreground">{exercise.name}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Add</span>
+                  <Plus
+                    size={16}
+                    className="text-brand group-hover:scale-110 transition-transform"
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Add</span>
-                <Plus
-                  size={16}
-                  className="text-brand group-hover:scale-110 transition-transform"
-                />
-              </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          ))}
+        </div>
         {recommendedExercises.length > showIndex && (
           <div className="flex flex-wrap justify-between items-center gap-2">
             <p className="text-sm text-muted-foreground text-center pt-2">
