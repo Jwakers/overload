@@ -51,7 +51,8 @@ export default function SignInPage() {
                   workouts, monitor your progress, and achieve your goals.
                 </p>
                 <p className="text-muted-foreground">
-                  This page should redirect automatically to the dashboard.
+                  If you&apos;re already signed in, you&apos;ll be redirected to
+                  your dashboard.
                 </p>
               </div>
 

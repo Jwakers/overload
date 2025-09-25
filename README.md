@@ -66,8 +66,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Install and refactor with serwist
 - [ ] Set up a cron or background job to check for stale pushSubscriptions and delete them
 - [ ] Send notifications with convex actions instead of server actions
+- [ ] Add splash screen/start up images for android and iphone
 - [ ] Test on production deployment
-- [ ] Set up a system that sends specifically me an inspirational quote every day at the same time through the app to celebrate the PWA milestone
 
 ### Phase 3: Core Features
 

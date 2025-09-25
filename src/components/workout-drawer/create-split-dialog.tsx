@@ -93,11 +93,7 @@ export function CreateSplitDialog({
   };
 
   const defaultTrigger = (
-    <Button
-      variant="outline"
-      className={className || "w-full"}
-      onClick={() => setOpen(true)}
-    >
+    <Button variant="outline" className={className || "w-full"}>
       <Plus size={16} className="mr-2" />
       Create New Split
     </Button>

@@ -47,6 +47,7 @@ export function DeleteDialog({
             variant="ghost"
             size="sm"
             title={triggerTitle}
+            aria-label={triggerTitle}
             disabled={disabled}
           >
             <Trash2 className="h-4 w-4 text-destructive" />

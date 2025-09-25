@@ -1,22 +1,15 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { MAX_EXERCISES_TO_SHOW } from "@/constants";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import type { FunctionReturnType } from "convex/server";
 import { Dumbbell, Plus } from "lucide-react";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { CreateSplitDialog } from "./create-split-dialog";
+import { SplitListItem } from "./split-list-item";
 
 type SplitSelectionGridProps = {
   workoutSessionId: Id<"workoutSessions">;
@@ -179,10 +172,12 @@ export function SplitSelectionGrid({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {recentlyAccessedSplits?.map((split) => (
-          <SplitCard
+          <SplitListItem
             key={split._id}
             split={split}
             onSelect={() => handleSplitSelect(split._id)}
+            variant="card"
+            showUpdatedDate={false}
           />
         ))}
       </div>
@@ -191,61 +186,5 @@ export function SplitSelectionGrid({
         <CreateSplitDialog onCreate={handleSplitSelect} />
       </div>
     </div>
-  );
-}
-
-type SplitCardProps = {
-  split: FunctionReturnType<typeof api.splits.getSplits>[number];
-  onSelect: () => void;
-};
-
-function SplitCard({ split, onSelect }: SplitCardProps) {
-  const exercisesToShow = split.exercises.slice(0, MAX_EXERCISES_TO_SHOW);
-
-  return (
-    <Card onClick={onSelect}>
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle>{split.name}</CardTitle>
-          <Badge
-            variant={split.isActive ? "default" : "secondary"}
-            className="text-xs shrink-0"
-          >
-            {split.isActive ? "Active" : "Inactive"}
-          </Badge>
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        {split.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {split.description}
-          </p>
-        )}
-
-        {exercisesToShow.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {exercisesToShow.map((exercise) => (
-              <Badge key={exercise._id} variant="outline" className="text-xs">
-                {exercise.name}
-              </Badge>
-            ))}
-            {exercisesToShow.length < split.exercises.length && (
-              <Badge variant="outline" className="text-xs">
-                +{split.exercises.length - exercisesToShow.length} more
-              </Badge>
-            )}
-          </div>
-        )}
-      </CardContent>
-      <CardFooter className="ml-auto">
-        <div className="flex items-center justify-center pt-2">
-          <div className="flex items-center gap-2 text-brand text-sm font-medium group-hover:scale-105 transition-transform">
-            <Plus className="h-4 w-4" />
-            <span>Select Split</span>
-          </div>
-        </div>
-      </CardFooter>
-    </Card>
   );
 }

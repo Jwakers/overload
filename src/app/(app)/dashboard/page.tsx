@@ -76,19 +76,6 @@ function DashboardContent() {
 
   const recentWorkouts = completedWorkouts.slice(0, 5);
 
-  // Debug: Log workout data to understand the issue
-  if (completedWorkouts.length > 0) {
-    console.log("Debug - Sample workout data:", {
-      workout: completedWorkouts[0],
-      startedAt: completedWorkouts[0].startedAt,
-      completedAt: completedWorkouts[0].completedAt,
-      duration:
-        completedWorkouts[0].completedAt && completedWorkouts[0].startedAt
-          ? completedWorkouts[0].completedAt - completedWorkouts[0].startedAt
-          : "N/A",
-    });
-  }
-
   return (
     <div className="container px-4 py-4 max-w-6xl mx-auto space-y-8">
       {/* Welcome Section */}
@@ -144,7 +131,7 @@ function DashboardContent() {
                   {totalExercises}
                 </p>
                 <p className="text-xs text-energy-muted-foreground">
-                  unique exercises
+                  exercises logged
                 </p>
               </div>
               <Dumbbell className="h-8 w-8 text-energy" />
