@@ -33,8 +33,8 @@ export function SplitListItem({
 
   if (variant === "card") {
     return (
-      <button type="button" onClick={onSelect}>
-        <Card className="cursor-pointer">
+      <button type="button" className="group cursor-pointer" onClick={onSelect}>
+        <Card className="cursor-pointer group-hover:border-brand transition-colors">
           <CardHeader>
             <div className="flex items-start justify-between gap-2">
               <CardTitle>{split.name}</CardTitle>
@@ -76,7 +76,7 @@ export function SplitListItem({
 
           <CardFooter className="ml-auto">
             <div className="flex items-center justify-center pt-2">
-              <div className="flex items-center gap-2 text-brand text-sm font-medium group-hover:scale-105 transition-transform">
+              <div className="flex items-center gap-2 text-brand text-sm font-medium">
                 <Plus className="h-4 w-4" />
                 <span>Select Split</span>
               </div>
