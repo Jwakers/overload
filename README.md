@@ -8,7 +8,19 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
   - Add to workout dropdown an option to remove the split from a workout
 - Populate data proper from my records
 - Add a dark mode feature controlled in user settings
+- Set up production (clerk, convex, vercel) and migrate my data over
+- In exercise list, change equipment to a badge rather than text in brackets
 - Review readme and prioritize next steps
+- When there is nothing in the exercise list (new session, new split) Add some basic copy to instruct mentioning how you are prompted to add exercises to your split as you go
+
+## Usage notes
+
+- Quick start does not contain equipment
+- Form fields do not scroll into view above the ios keyboard when focused
+- PB styling is applied when reps decrease but weight remains the same
+- Weight/body weight should be preset in the field based on the last session
+- Set notes UI is not intuitive being under the confirm set button
+- Dashboard is slow to load; add a loading.tsx file.
 
 ## 🏋️‍♂️ Development Todo List
 
@@ -19,6 +31,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Notifications section in settings. Green tick is squashed on Iphone
 - [x] On saving a workout session, all unsaved exercise sets should be saved first or at least warn that they are not saved
 - [x] Signed out users can see the nav and start workouts
+- [ ] Hyphenated exercises are harder to search for (eg Pull ups does not show Pull-Ups)
 - [ ] Splits should not be active/inactive, they should just get deleted and removed from workout sessions that had them assigned.
 - [ ] Edit exercise button does not work (happened when workout sets were all deleted)
 - [ ] When setting and saving PB and performance data we must account for difference in weight unit
