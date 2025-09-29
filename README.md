@@ -4,7 +4,10 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 // TODO next
 
+- Edit update and delete splits on split management page
+  - Add to workout dropdown an option to remove the split from a workout
 - Populate data proper from my records
+- Add a dark mode feature controlled in user settings
 - Review readme and prioritize next steps
 
 ## 🏋️‍♂️ Development Todo List
@@ -26,6 +29,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] Toast descriptions are too light for example when used for push notification toasts
 - [ ] The PB styling on sets when it comes to body weight is not working as intended
 - [ ] Clicking toasts close the drawers
+- [ ] If there are multiple "Add to split banners" both of them say adding... during the loading state. Needs to be scoped to the individual button not all (they should all be disabled during submissions still)
+- [ ] It is possible to start a workout session, close it without adding any exercises, and it remains in the DB. It should either: delete if empty OR on creating workout sessions, check for active empty ones and clean up before returning the new one. The issue here is you could resume an active workout that was started on a different day, so the data would not be completely accurate
 
 ### Phase 1: Project Setup & Dependencies
 

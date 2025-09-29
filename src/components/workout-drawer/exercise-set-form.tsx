@@ -235,6 +235,7 @@ function SetForm({
                       type="number"
                       inputMode="numeric"
                       {...field}
+                      step="any"
                       value={isBodyWeight ? "" : field.value}
                       onChange={isBodyWeight ? () => {} : field.onChange}
                     />
