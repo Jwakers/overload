@@ -40,6 +40,7 @@ export function SelectExerciseDrawer({
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [searchValue, setSearchValue] = useState<string>("");
+
   const refinedExercises = useMemo(() => {
     if (!exercises) return exercises;
 
@@ -56,8 +57,10 @@ export function SelectExerciseDrawer({
     // Apply search filter (by exercise name)
     if (searchValue) {
       const sv = searchValue.toLowerCase();
-      filtered = filtered.filter((exercise) =>
-        exercise.name.toLowerCase().includes(sv)
+      filtered = filtered.filter(
+        (exercise) =>
+          exercise.name.toLowerCase().includes(sv) ||
+          sv.includes(exercise.name.toLowerCase())
       );
     }
 
@@ -198,7 +201,10 @@ export function SelectExerciseDrawer({
                 return (
                   <div
                     key={exercise._id}
-                    onClick={() => onSelect(exercise._id)}
+                    onClick={() => {
+                      onSelect(exercise._id);
+                      setSearchValue("");
+                    }}
                     className="p-4 w-full rounded-lg border bg-card hover:bg-accent cursor-pointer transition-colors"
                   >
                     <div className="flex justify-between items-start gap-3">

@@ -233,7 +233,8 @@ function SetForm({
                       min={isBodyWeight ? undefined : 1}
                       placeholder={isBodyWeight ? "Body Weight" : "0"}
                       type="number"
-                      inputMode="numeric"
+                      inputMode="decimal"
+                      step="any"
                       {...field}
                       value={isBodyWeight ? "" : field.value}
                       onChange={isBodyWeight ? () => {} : field.onChange}
@@ -258,6 +259,7 @@ function SetForm({
                   <Input
                     type="number"
                     min={1}
+                    step={1}
                     placeholder="0"
                     inputMode="numeric"
                     {...field}

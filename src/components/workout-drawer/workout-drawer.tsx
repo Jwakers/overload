@@ -486,12 +486,19 @@ export function WorkoutDrawer() {
                       </div>
                     ) : null}
                     <div className="gap-2 flex justify-between items-center">
-                      <p className="font-semibold">
-                        {exerciseSet.exercise?.name}
-                        {exerciseSet.exercise?.equipment
-                          ? ` - ${exerciseSet.exercise?.equipment}`
-                          : ""}
-                      </p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-semibold">
+                          {exerciseSet.exercise?.name}
+                        </p>
+                        {exerciseSet.exercise?.equipment ? (
+                          <Badge
+                            variant="outline"
+                            className="text-xs capitalize"
+                          >
+                            {exerciseSet.exercise?.equipment}
+                          </Badge>
+                        ) : null}
+                      </div>
                       {exerciseSet.isActive ? (
                         <ActiveExerciseSetActions
                           isSaved={savedExerciseSets.has(exerciseSet._id)}

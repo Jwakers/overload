@@ -4,8 +4,23 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 // TODO next
 
+- Edit update and delete splits on split management page
+  - Add to workout dropdown an option to remove the split from a workout
 - Populate data proper from my records
+- Add a dark mode feature controlled in user settings
+- Set up production (clerk, convex, vercel) and migrate my data over
+- In exercise list, change equipment to a badge rather than text in brackets
 - Review readme and prioritize next steps
+- When there is nothing in the exercise list (new session, new split) Add some basic copy to instruct mentioning how you are prompted to add exercises to your split as you go
+
+## Usage notes
+
+- Quick start does not contain equipment
+- Form fields do not scroll into view above the ios keyboard when focused
+- PB styling is applied when reps decrease but weight remains the same
+- Weight/body weight should be preset in the field based on the last session
+- Set notes UI is not intuitive being under the confirm set button
+- Dashboard is slow to load; add a loading.tsx file.
 
 ## 🏋️‍♂️ Development Todo List
 
@@ -16,6 +31,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Notifications section in settings. Green tick is squashed on Iphone
 - [x] On saving a workout session, all unsaved exercise sets should be saved first or at least warn that they are not saved
 - [x] Signed out users can see the nav and start workouts
+- [ ] Hyphenated exercises are harder to search for (eg Pull ups does not show Pull-Ups)
 - [ ] Splits should not be active/inactive, they should just get deleted and removed from workout sessions that had them assigned.
 - [ ] Edit exercise button does not work (happened when workout sets were all deleted)
 - [ ] When setting and saving PB and performance data we must account for difference in weight unit
@@ -26,6 +42,8 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [ ] Toast descriptions are too light for example when used for push notification toasts
 - [ ] The PB styling on sets when it comes to body weight is not working as intended
 - [ ] Clicking toasts close the drawers
+- [ ] If there are multiple "Add to split banners" both of them say adding... during the loading state. Needs to be scoped to the individual button not all (they should all be disabled during submissions still)
+- [ ] It is possible to start a workout session, close it without adding any exercises, and it remains in the DB. It should either: delete if empty OR on creating workout sessions, check for active empty ones and clean up before returning the new one. The issue here is you could resume an active workout that was started on a different day, so the data would not be completely accurate
 
 ### Phase 1: Project Setup & Dependencies
 

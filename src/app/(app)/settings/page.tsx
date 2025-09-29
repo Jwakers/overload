@@ -123,7 +123,7 @@ export default function SettingsPage() {
                         placeholder="Enter weight"
                         className="flex-1"
                         min={0}
-                        inputMode="numeric"
+                        inputMode="decimal"
                       />
                       <select
                         value={weightUnit}
