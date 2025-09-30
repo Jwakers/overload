@@ -15,12 +15,9 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 ## Usage notes
 
-- Quick start does not contain equipment
-- Form fields do not scroll into view above the ios keyboard when focused
 - PB styling is applied when reps decrease but weight remains the same
-- Weight/body weight should be preset in the field based on the last session
-- Set notes UI is not intuitive being under the confirm set button
 - Dashboard is slow to load; add a loading.tsx file.
+- Occasionally I need a reminder of how to do an exercise properly. An exercise description/how-to would be great. There can be a small button in the exercise set that can display the description
 
 ## 🏋️‍♂️ Development Todo List
 
