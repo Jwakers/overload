@@ -790,9 +790,11 @@ function RecommendedExercises({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-foreground">{exercise.name}</p>
-                  <Badge variant="outline" className="text-xs capitalize">
-                    {exercise.equipment}
-                  </Badge>
+                  {exercise.equipment ? (
+                    <Badge variant="outline" className="text-xs capitalize">
+                      {exercise.equipment}
+                    </Badge>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Add</span>
