@@ -203,6 +203,15 @@ function SetForm({
   setShowNotes,
   notesTextareaRef,
 }: SetFormProps) {
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setTimeout(() => {
+      e.target.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 300);
+  };
+
   return (
     <Form {...form}>
       <form
@@ -236,6 +245,7 @@ function SetForm({
                       inputMode="decimal"
                       step="any"
                       {...field}
+                      onFocus={handleFocus}
                       value={isBodyWeight ? "" : field.value}
                       onChange={isBodyWeight ? () => {} : field.onChange}
                     />
@@ -263,6 +273,7 @@ function SetForm({
                     placeholder="0"
                     inputMode="numeric"
                     {...field}
+                    onFocus={handleFocus}
                   />
                 </FormControl>
                 <FormMessage />
@@ -285,77 +296,82 @@ function SetForm({
           </Button>
         </div>
 
-        <div className="row-start-2 col-span-4 flex justify-between">
-          {/* Body Weight Toggle */}
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant={isBodyWeight ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                setIsBodyWeight(!isBodyWeight);
-                if (!isBodyWeight) {
-                  // When enabling body weight, clear the weight field
-                  form.setValue("weight", "");
-                }
-              }}
-              className="h-8 px-2 text-xs"
-              disabled={isPending}
-            >
-              <Weight className="h-3 w-3 mr-1" />
-              Body Weight
-            </Button>
-            {isBodyWeight && user?.bodyWeight && (
-              <span className="text-xs text-muted-foreground">
-                ({user.bodyWeight}
-                {user.bodyWeightUnit ||
-                  user.preferences?.defaultWeightUnit ||
-                  ""}
-                )
-              </span>
-            )}
-          </div>
+        <div className="row-start-2 col-span-4 flex flex-col gap-3">
+          {/* Body Weight Toggle and Add Notes Button */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant={isBodyWeight ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setIsBodyWeight(!isBodyWeight);
+                  if (!isBodyWeight) {
+                    // When enabling body weight, clear the weight field
+                    form.setValue("weight", "");
+                  }
+                }}
+                className="h-8 px-2 text-xs"
+                disabled={isPending}
+              >
+                <Weight className="h-3 w-3 mr-1" />
+                Body Weight
+              </Button>
+              {isBodyWeight && user?.bodyWeight && (
+                <span className="text-xs text-muted-foreground">
+                  ({user.bodyWeight}
+                  {user.bodyWeightUnit ||
+                    user.preferences?.defaultWeightUnit ||
+                    ""}
+                  )
+                </span>
+              )}
+            </div>
 
-          <div className="flex flex-col gap-2">
-            {!showNotes ? (
+            {!showNotes && (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowNotes(true)}
-                className="self-end"
+                className="h-8 px-2 text-xs"
               >
-                Add notes to this set
-                <Plus />
+                <Plus className="h-3 w-3 mr-1" />
+                Add notes
               </Button>
-            ) : (
-              <FormField
-                control={form.control}
-                name="notes"
-                disabled={isPending}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="sr-only">Notes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Notes (optional)"
-                        maxLength={255}
-                        {...field}
-                        ref={(e) => {
-                          field.ref(e);
-                          notesTextareaRef.current = e;
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    <div className="text-xs text-muted-foreground text-right">
-                      {field.value?.length || 0}/255
-                    </div>
-                  </FormItem>
-                )}
-              />
             )}
           </div>
+
+          {/* Notes Section - Full Width */}
+          {showNotes && (
+            <FormField
+              control={form.control}
+              name="notes"
+              disabled={isPending}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="sr-only">Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Notes (optional)"
+                      maxLength={255}
+                      className="resize-none"
+                      rows={2}
+                      {...field}
+                      ref={(e) => {
+                        field.ref(e);
+                        notesTextareaRef.current = e;
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <div className="text-xs text-muted-foreground text-right">
+                    {field.value?.length || 0}/255
+                  </div>
+                </FormItem>
+              )}
+            />
+          )}
         </div>
       </form>
     </Form>
@@ -536,7 +552,14 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
         reps: exercisePerformance.personalBest.reps,
       });
     }
-  }, [exercisePerformance?.personalBest, initialPersonalBest]);
+    if (exercisePerformance?.lastWeight !== undefined) {
+      form.setValue("weight", exercisePerformance.lastWeight.toString());
+    }
+
+    if (exercisePerformance?.lastIsBodyWeight) {
+      setIsBodyWeight(true);
+    }
+  }, [exercisePerformance, initialPersonalBest, form]);
 
   // Helper function to check if a set is a personal best achievement
   const getPersonalBestStatus = (set: Doc<"exerciseSets">["sets"][number]) => {
