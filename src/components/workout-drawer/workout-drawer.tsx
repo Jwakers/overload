@@ -4,7 +4,7 @@ import { Doc, Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
-import { FunctionReturnType } from "convex/server";
+import { type FunctionReturnType } from "convex/server";
 import {
   Check,
   Dumbbell,

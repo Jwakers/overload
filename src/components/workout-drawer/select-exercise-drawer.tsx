@@ -13,14 +13,15 @@ import {
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "../ui/drawer";
 import { Input } from "../ui/input";
-import { ScrollArea } from "../ui/scroll-area";
 import { ExerciseFilter } from "./exercise-filter";
 
 interface SelectExerciseDrawerProps {
@@ -37,6 +38,7 @@ export function SelectExerciseDrawer({
   const exercises = useQuery(api.exercises.getAll);
   const [filterValue, setFilterValue] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [searchValue, setSearchValue] = useState<string>("");
 
   const refinedExercises = useMemo(() => {
@@ -76,6 +78,12 @@ export function SelectExerciseDrawer({
   }, [refinedExercises]);
 
   useEffect(() => {
+    // Scroll to top when filter or search value changes
+    if (!scrollContainerRef.current) return;
+    scrollContainerRef.current.scrollTop = 0;
+  }, [filterValue, searchValue]);
+
+  useEffect(() => {
     if (!open) return;
     setTimeout(() => {
       inputRef.current?.focus();
@@ -83,17 +91,17 @@ export function SelectExerciseDrawer({
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={onChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle>Select Exercise</DialogTitle>
-          <DialogDescription>
+    <Drawer open={open} onOpenChange={onChange}>
+      <DrawerContent className="flex flex-col h-full">
+        <DrawerHeader className="pb-4">
+          <DrawerTitle>Select Exercise</DrawerTitle>
+          <DrawerDescription>
             Select an exercise to add to your workout.
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
         {/* Search and Filter Section */}
-        <div className="px-6 pb-4 space-y-3 border-b">
+        <div className="px-4 pb-4 space-y-3 border-b">
           {/* Search Input and Filter Button */}
           <div className="flex gap-3">
             <div className="relative flex-1">
@@ -103,7 +111,7 @@ export function SelectExerciseDrawer({
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 placeholder="Search exercises"
-                className="pl-10 pr-10"
+                className="pl-10 pr-10 h-12 text-base"
               />
               {searchValue && (
                 <Button
@@ -117,8 +125,12 @@ export function SelectExerciseDrawer({
               )}
             </div>
             <ExerciseFilter value={filterValue} setValue={setFilterValue}>
-              <Button variant="outline" title="Filter exercises">
-                <FilterIcon className="h-4 w-4 mr-2" />
+              <Button
+                variant="outline"
+                title="Filter exercises"
+                className="h-12"
+              >
+                <FilterIcon />
                 <span>Filter</span>
               </Button>
             </ExerciseFilter>
@@ -157,8 +169,8 @@ export function SelectExerciseDrawer({
         </div>
 
         {/* Exercise List */}
-        <ScrollArea className="flex-1 px-6">
-          <div className="space-y-2 py-4 pr-4">
+        <div className="flex-1 px-4 overflow-y-auto" ref={scrollContainerRef}>
+          <div className="space-y-2 py-4">
             {refinedExercises?.length === 0 ? (
               <div className="text-center py-12">
                 <Search className="mx-auto size-12 text-muted-foreground mb-4" />
@@ -192,7 +204,6 @@ export function SelectExerciseDrawer({
                     onClick={() => {
                       onSelect(exercise._id);
                       setSearchValue("");
-                      onChange(false);
                     }}
                     className="p-4 w-full rounded-lg border bg-card hover:bg-accent cursor-pointer transition-colors"
                   >
@@ -234,20 +245,17 @@ export function SelectExerciseDrawer({
               })
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Footer */}
-        <div className="border-t px-6 py-4">
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full"
-            onClick={() => onChange(false)}
-          >
-            Close
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        <DrawerFooter className="border-t pt-4">
+          <DrawerClose asChild>
+            <Button variant="outline" size="lg" className="w-full">
+              Close
+            </Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

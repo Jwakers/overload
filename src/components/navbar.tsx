@@ -11,17 +11,17 @@ export default function Navbar() {
   const navItems = [
     {
       name: "Dashboard",
-      href: "/dashboard",
+      href: ROUTES.DASHBOARD,
       icon: Home,
     },
     {
       name: "Splits",
-      href: "/splits",
+      href: ROUTES.SPLITS,
       icon: Dumbbell,
     },
     {
       name: "Settings",
-      href: "/settings",
+      href: ROUTES.SETTINGS,
       icon: Settings,
     },
   ];
@@ -54,6 +54,7 @@ export default function Navbar() {
             href={ROUTES.WORKOUT}
             className="relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1"
             title="Log workout"
+            aria-label="Log workout"
           >
             <div className="p-4 rounded-full bg-brand text-brand-foreground shadow-lg">
               <Plus size={24} className={"text-brand-foreground"} />

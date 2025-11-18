@@ -33,13 +33,13 @@ import { SelectExerciseDrawer } from "@/components/workout-drawer/select-exercis
 import { SplitSelectionGrid } from "@/components/workout-drawer/split-selection-grid";
 import { WeightUnitToggle } from "@/components/workout-drawer/weight-unit-toggle";
 import { WorkoutActionsMenu } from "@/components/workout-drawer/workout-actions-menu";
-import { MAX_EXERCISES_TO_SHOW } from "@/constants";
+import { MAX_EXERCISES_TO_SHOW, ROUTES } from "@/constants";
 import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
-import { FunctionReturnType } from "convex/server";
+import { type FunctionReturnType } from "convex/server";
 import {
   ArrowLeft,
   Check,
@@ -261,6 +261,12 @@ export default function WorkoutPage() {
   >(new Set());
 
   useEffect(() => {
+    if (!workoutSessionId) return;
+
+    setSavedExerciseSets(new Set());
+  }, [workoutSessionId]);
+
+  useEffect(() => {
     if (workoutSessionId) return;
 
     const createSession = async () => {
@@ -344,7 +350,7 @@ export default function WorkoutPage() {
     toast.promise(deleteWorkoutSession({ id: workoutSessionId }), {
       loading: "Deleting workout…",
       success: () => {
-        router.push("/dashboard");
+        router.push(ROUTES.DASHBOARD);
         setWorkoutSessionId(null);
         return "Workout deleted";
       },
@@ -402,7 +408,7 @@ export default function WorkoutPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push(ROUTES.DASHBOARD)}
               className="h-8 px-2"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
@@ -540,7 +546,7 @@ export default function WorkoutPage() {
               disabled={!exerciseSets?.length}
               workoutSessionId={workoutSessionId}
               onComplete={() => {
-                router.push("/dashboard");
+                router.push(ROUTES.DASHBOARD);
                 setWorkoutSessionId(null);
               }}
             />
