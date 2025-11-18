@@ -3,6 +3,7 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
   SETTINGS: "/settings",
   SPLITS: "/splits",
+  WORKOUT: "/workout",
 } as const satisfies Record<string, `/${string}`>;
 
 export const MAX_EXERCISES_TO_SHOW = 3; // How many exercises show in pill form in condensed split views

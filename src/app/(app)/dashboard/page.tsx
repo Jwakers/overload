@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ROUTES } from "@/constants";
 import { api } from "@/convex/_generated/api";
 import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { format } from "date-fns";
@@ -181,7 +182,7 @@ function DashboardContent() {
                 Start your fitness journey by completing your first workout.
                 Track your progress and see your improvements over time.
               </p>
-              <Link href="/workout">
+              <Link href={ROUTES.WORKOUT}>
                 <Button
                   size="lg"
                   className="bg-brand hover:bg-brand/90 text-brand-foreground"

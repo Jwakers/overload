@@ -13,12 +13,12 @@ import {
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
+  Drawer,
   DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
-  DrawerNested,
   DrawerTitle,
 } from "../ui/drawer";
 import { Input } from "../ui/input";
@@ -91,7 +91,7 @@ export function SelectExerciseDrawer({
   }, [open]);
 
   return (
-    <DrawerNested open={open} onOpenChange={onChange}>
+    <Drawer open={open} onOpenChange={onChange}>
       <DrawerContent className="flex flex-col h-full">
         <DrawerHeader className="pb-4">
           <DrawerTitle>Select Exercise</DrawerTitle>
@@ -256,6 +256,6 @@ export function SelectExerciseDrawer({
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
-    </DrawerNested>
+    </Drawer>
   );
 }

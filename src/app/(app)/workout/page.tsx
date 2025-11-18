@@ -1,27 +1,8 @@
-import { MAX_EXERCISES_TO_SHOW } from "@/constants";
-import { api } from "@/convex/_generated/api";
-import { Doc, Id } from "@/convex/_generated/dataModel";
-import { cn } from "@/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "convex/react";
-import { type FunctionReturnType } from "convex/server";
-import {
-  Check,
-  Dumbbell,
-  DumbbellIcon,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  Save,
-  Trash2,
-} from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import z from "zod";
-import { DeleteDialog } from "../delete-dialog";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+"use client";
+
+import { DeleteDialog } from "@/components/delete-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -31,21 +12,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "../ui/drawer";
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   Form,
   FormControl,
@@ -53,13 +26,36 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
-import { Textarea } from "../ui/textarea";
-import { ExerciseSetForm } from "./exercise-set-form";
-import { SelectExerciseDrawer } from "./select-exercise-drawer";
-import { SplitSelectionGrid } from "./split-selection-grid";
-import { WeightUnitToggle } from "./weight-unit-toggle";
-import { WorkoutActionsMenu } from "./workout-actions-menu";
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { ExerciseSetForm } from "@/components/workout-drawer/exercise-set-form";
+import { SelectExerciseDrawer } from "@/components/workout-drawer/select-exercise-drawer";
+import { SplitSelectionGrid } from "@/components/workout-drawer/split-selection-grid";
+import { WeightUnitToggle } from "@/components/workout-drawer/weight-unit-toggle";
+import { WorkoutActionsMenu } from "@/components/workout-drawer/workout-actions-menu";
+import { MAX_EXERCISES_TO_SHOW, ROUTES } from "@/constants";
+import { api } from "@/convex/_generated/api";
+import { Doc, Id } from "@/convex/_generated/dataModel";
+import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery } from "convex/react";
+import { type FunctionReturnType } from "convex/server";
+import {
+  ArrowLeft,
+  Check,
+  Dumbbell,
+  DumbbellIcon,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import z from "zod";
 
 // Inactive Exercise Set Card Component
 type InactiveExerciseSetCardProps = {
@@ -216,8 +212,8 @@ function ActiveExerciseSetActions({
   );
 }
 
-export function WorkoutDrawer() {
-  const [open, setOpen] = useState(false);
+export default function WorkoutPage() {
+  const router = useRouter();
   const [workoutSessionId, setWorkoutSessionId] =
     useState<Id<"workoutSessions"> | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -265,7 +261,13 @@ export function WorkoutDrawer() {
   >(new Set());
 
   useEffect(() => {
-    if (workoutSessionId || !open) return;
+    if (!workoutSessionId) return;
+
+    setSavedExerciseSets(new Set());
+  }, [workoutSessionId]);
+
+  useEffect(() => {
+    if (workoutSessionId) return;
 
     const createSession = async () => {
       toast.promise(getOrCreateSessionMutation(), {
@@ -282,13 +284,13 @@ export function WorkoutDrawer() {
     };
 
     createSession();
-  }, [open, getOrCreateSessionMutation, workoutSessionId]);
+  }, [getOrCreateSessionMutation, workoutSessionId]);
 
   useEffect(() => {
-    if (!open || !scrollAreaRef.current) return;
+    if (!scrollAreaRef.current) return;
     // Scroll on open and whenever a new set appears
     scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-  }, [open, exerciseSets?.length]);
+  }, [exerciseSets?.length]);
 
   // Track which exercise sets have been saved previously
   useEffect(() => {
@@ -348,7 +350,7 @@ export function WorkoutDrawer() {
     toast.promise(deleteWorkoutSession({ id: workoutSessionId }), {
       loading: "Deleting workout…",
       success: () => {
-        setOpen(false);
+        router.push(ROUTES.DASHBOARD);
         setWorkoutSessionId(null);
         return "Workout deleted";
       },
@@ -398,183 +400,179 @@ export function WorkoutDrawer() {
   };
 
   return (
-    <>
-      <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>
-          <button
-            className="relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1"
-            title="Log workout"
-            type="button"
-          >
-            <div className="p-4 rounded-full bg-brand text-brand-foreground shadow-lg">
-              <Plus size={24} className={"text-brand-foreground"} />
-            </div>
-          </button>
-        </DrawerTrigger>
-        <DrawerContent className="grid grid-rows-[auto_auto_1fr] max-h-[98dvh] h-full">
-          <DrawerHeader className="space-y-2">
-            <DrawerTitle className="sr-only">New Workout</DrawerTitle>
-            <div className="flex justify-between items-center gap-2">
-              {workoutSessionId && (
-                <WorkoutActionsMenu
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background border-b">
+        <div className="container px-4 py-3">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push(ROUTES.DASHBOARD)}
+              className="h-8 px-2"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+            {workoutSessionId && (
+              <WorkoutActionsMenu
+                workoutSessionId={workoutSessionId}
+                selectedSplitId={workoutSession?.splitId}
+                onDeleteWorkout={handleDeleteWorkout}
+                isPending={isPending}
+              />
+            )}
+            <WeightUnitToggle />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto pb-24">
+        <div className="container px-4 py-4 space-y-4">
+          <ActiveSplit split={split} />
+          <div className="flex flex-col gap-2">
+            {/* Show split selection grid when no exercises are added */}
+            {workoutSessionId &&
+              (!exerciseSets || exerciseSets.length === 0) &&
+              !split && (
+                <SplitSelectionGrid
                   workoutSessionId={workoutSessionId}
-                  selectedSplitId={workoutSession?.splitId}
-                  onDeleteWorkout={handleDeleteWorkout}
-                  isPending={isPending}
+                  onSplitSelected={() => {
+                    // The split will be updated via the mutation, no need to do anything here
+                  }}
                 />
               )}
-              <WeightUnitToggle />
-            </div>
-          </DrawerHeader>
-          <div
-            ref={scrollAreaRef}
-            className="container relative overflow-y-auto space-y-4"
-          >
-            <ActiveSplit split={split} />
-            <div className="flex flex-col gap-2 h-full">
-              {/* Show split selection grid when no exercises are added */}
-              {workoutSessionId &&
-                (!exerciseSets || exerciseSets.length === 0) &&
-                !split && (
-                  <SplitSelectionGrid
-                    workoutSessionId={workoutSessionId}
-                    onSplitSelected={() => {
-                      // The split will be updated via the mutation, no need to do anything here
-                    }}
-                  />
-                )}
 
-              {exerciseSets?.map((exerciseSet) => {
-                const renderSplitPrompt =
-                  split &&
-                  !split?.exercises.some(
-                    (ex) => ex._id === exerciseSet.exercise?._id
-                  );
+            {exerciseSets?.map((exerciseSet) => {
+              const renderSplitPrompt =
+                split &&
+                !split?.exercises.some(
+                  (ex) => ex._id === exerciseSet.exercise?._id
+                );
 
-                return (
-                  <div
-                    className={cn(
-                      "border p-4 space-y-4 rounded",
-                      !exerciseSet.isActive && "bg-muted text-muted-foreground"
-                    )}
-                    key={exerciseSet._id}
-                  >
-                    {/* Banner to add this exercise to a split */}
-                    {renderSplitPrompt ? (
-                      <div className="relative bg-gradient-to-r from-brand/10 to-brand/5 border border-brand/30 text-sm p-3 rounded-lg flex gap-3 justify-between items-center shadow-sm">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-brand rounded-full animate-pulse"></div>
-                          <p className="text-foreground">
-                            Add this exercise to split:{" "}
-                            <span className="font-semibold text-brand">
-                              {split?.name}
-                            </span>
-                            ?
-                          </p>
-                        </div>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          disabled={isPending}
-                          className="bg-brand hover:bg-brand/90 text-brand-foreground shadow-sm"
-                          onClick={() =>
-                            handleAddExerciseToSplit(exerciseSet.exercise?._id)
-                          }
-                        >
-                          {isPending ? "Adding..." : "Add"}
-                        </Button>
-                      </div>
-                    ) : null}
-                    <div className="gap-2 flex justify-between items-center">
-                      <div className="flex items-center gap-1">
-                        <p className="font-semibold">
-                          {exerciseSet.exercise?.name}
+              return (
+                <div
+                  className={cn(
+                    "border p-4 space-y-4 rounded",
+                    !exerciseSet.isActive && "bg-muted text-muted-foreground"
+                  )}
+                  key={exerciseSet._id}
+                >
+                  {/* Banner to add this exercise to a split */}
+                  {renderSplitPrompt ? (
+                    <div className="relative bg-gradient-to-r from-brand/10 to-brand/5 border border-brand/30 text-sm p-3 rounded-lg flex gap-3 justify-between items-center shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-brand rounded-full animate-pulse"></div>
+                        <p className="text-foreground">
+                          Add this exercise to split:{" "}
+                          <span className="font-semibold text-brand">
+                            {split?.name}
+                          </span>
+                          ?
                         </p>
-                        {exerciseSet.exercise?.equipment ? (
-                          <Badge
-                            variant="outline"
-                            className="text-xs capitalize"
-                          >
-                            {exerciseSet.exercise?.equipment}
-                          </Badge>
-                        ) : null}
                       </div>
-                      {exerciseSet.isActive ? (
-                        <ActiveExerciseSetActions
-                          isSaved={savedExerciseSets.has(exerciseSet._id)}
-                          onConcludeEditing={() =>
-                            handleConcludeEditing(exerciseSet._id)
-                          }
-                          onDelete={() => handleDeleteExercise(exerciseSet._id)}
-                          isPending={isPending}
-                        />
+                      <Button
+                        variant="default"
+                        size="sm"
+                        disabled={isPending}
+                        className="bg-brand hover:bg-brand/90 text-brand-foreground shadow-sm"
+                        onClick={() =>
+                          handleAddExerciseToSplit(exerciseSet.exercise?._id)
+                        }
+                      >
+                        {isPending ? "Adding..." : "Add"}
+                      </Button>
+                    </div>
+                  ) : null}
+                  <div className="gap-2 flex justify-between items-center">
+                    <div className="flex items-center gap-1">
+                      <p className="font-semibold">
+                        {exerciseSet.exercise?.name}
+                      </p>
+                      {exerciseSet.exercise?.equipment ? (
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {exerciseSet.exercise?.equipment}
+                        </Badge>
                       ) : null}
                     </div>
                     {exerciseSet.isActive ? (
-                      <ExerciseSetForm exerciseSetId={exerciseSet._id} />
-                    ) : (
-                      <InactiveExerciseSetCard
-                        exerciseSet={exerciseSet}
-                        handleEdit={() =>
-                          handleEditExerciseSet(exerciseSet._id)
+                      <ActiveExerciseSetActions
+                        isSaved={savedExerciseSets.has(exerciseSet._id)}
+                        onConcludeEditing={() =>
+                          handleConcludeEditing(exerciseSet._id)
                         }
-                        handleDelete={() =>
-                          handleDeleteExerciseSet(exerciseSet._id)
-                        }
+                        onDelete={() => handleDeleteExercise(exerciseSet._id)}
                         isPending={isPending}
                       />
-                    )}
+                    ) : null}
                   </div>
-                );
-              })}
-
-              <RecommendedExercises
-                split={split}
-                currentExerciseIds={
-                  exerciseSets
-                    ?.map((set) => set.exercise?._id)
-                    .filter((id): id is Id<"exercises"> => Boolean(id)) || []
-                }
-                onSelectExercise={handleSelectExercise}
-                disabled={!workoutSessionId}
-              />
-
-              <DrawerFooter className="safe-area-inset-bottom sticky bottom-2 inset-x-0 w-full px-0">
-                <div className="flex items-center justify-between gap-2">
-                  <SaveWorkoutDialog
-                    isPending={isPending}
-                    disabled={!exerciseSets?.length}
-                    workoutSessionId={workoutSessionId}
-                    onComplete={() => {
-                      setOpen(false);
-                      setWorkoutSessionId(null);
-                    }}
-                  />
-
-                  <button
-                    type="button"
-                    className={cn(
-                      "bg-brand text-brand-foreground flex items-center gap-2 px-4 py-3 rounded-full shadow-lg flex-1 max-w-50 justify-center",
-                      !workoutSessionId && "opacity-50 cursor-not-allowed"
-                    )}
-                    onClick={() => setSelectExerciseDialogOpen(true)}
-                    disabled={!workoutSessionId}
-                  >
-                    <DumbbellIcon size={18} />
-                    <p className="text-sm font-semibold">Add exercise</p>
-                  </button>
+                  {exerciseSet.isActive ? (
+                    <ExerciseSetForm exerciseSetId={exerciseSet._id} />
+                  ) : (
+                    <InactiveExerciseSetCard
+                      exerciseSet={exerciseSet}
+                      handleEdit={() => handleEditExerciseSet(exerciseSet._id)}
+                      handleDelete={() =>
+                        handleDeleteExerciseSet(exerciseSet._id)
+                      }
+                      isPending={isPending}
+                    />
+                  )}
                 </div>
-              </DrawerFooter>
-            </div>
+              );
+            })}
+
+            <RecommendedExercises
+              split={split}
+              currentExerciseIds={
+                exerciseSets
+                  ?.map((set) => set.exercise?._id)
+                  .filter((id): id is Id<"exercises"> => Boolean(id)) || []
+              }
+              onSelectExercise={handleSelectExercise}
+              disabled={!workoutSessionId}
+            />
           </div>
-          <SelectExerciseDrawer
-            open={selectExerciseDialogOpen}
-            onChange={setSelectExerciseDialogOpen}
-            onSelect={handleSelectExercise}
-          />
-        </DrawerContent>
-      </Drawer>
-    </>
+        </div>
+      </div>
+
+      {/* Footer Actions */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t safe-area-inset-bottom z-10">
+        <div className="container px-4 py-3">
+          <div className="flex items-center justify-between gap-2">
+            <SaveWorkoutDialog
+              isPending={isPending}
+              disabled={!exerciseSets?.length}
+              workoutSessionId={workoutSessionId}
+              onComplete={() => {
+                router.push(ROUTES.DASHBOARD);
+                setWorkoutSessionId(null);
+              }}
+            />
+
+            <button
+              type="button"
+              className={cn(
+                "bg-brand text-brand-foreground flex items-center gap-2 px-4 py-3 rounded-full shadow-lg flex-1 max-w-50 justify-center",
+                !workoutSessionId && "opacity-50 cursor-not-allowed"
+              )}
+              onClick={() => setSelectExerciseDialogOpen(true)}
+              disabled={!workoutSessionId}
+            >
+              <DumbbellIcon size={18} />
+              <p className="text-sm font-semibold">Add exercise</p>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <SelectExerciseDrawer
+        open={selectExerciseDialogOpen}
+        onChange={setSelectExerciseDialogOpen}
+        onSelect={handleSelectExercise}
+      />
+    </div>
   );
 }
 

@@ -1,27 +1,27 @@
 "use client";
 
+import { ROUTES } from "@/constants";
 import { cn } from "@/lib/utils";
-import { Dumbbell, Home, Settings } from "lucide-react";
+import { Dumbbell, Home, Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { WorkoutDrawer } from "./workout-drawer/workout-drawer";
 
 export default function Navbar() {
   const pathname = usePathname();
   const navItems = [
     {
       name: "Dashboard",
-      href: "/dashboard",
+      href: ROUTES.DASHBOARD,
       icon: Home,
     },
     {
       name: "Splits",
-      href: "/splits",
+      href: ROUTES.SPLITS,
       icon: Dumbbell,
     },
     {
       name: "Settings",
-      href: "/settings",
+      href: ROUTES.SETTINGS,
       icon: Settings,
     },
   ];
@@ -50,7 +50,16 @@ export default function Navbar() {
               </Link>
             );
           })}
-          <WorkoutDrawer />
+          <Link
+            href={ROUTES.WORKOUT}
+            className="relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1"
+            title="Log workout"
+            aria-label="Log workout"
+          >
+            <div className="p-4 rounded-full bg-brand text-brand-foreground shadow-lg">
+              <Plus size={24} className={"text-brand-foreground"} />
+            </div>
+          </Link>
         </div>
       </nav>
     </div>
