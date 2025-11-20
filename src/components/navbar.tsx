@@ -30,19 +30,35 @@ export default function Navbar() {
   const navbarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleResize = () => {
+    const updateNavHeight = () => {
       const navHeight = navbarRef.current?.clientHeight;
 
       if (!navHeight) return;
       document.documentElement.style.setProperty(
         "--nav-height",
-        `${navHeight + 1}px` // Add 1px to account for the border
+        `${navHeight}px`
       );
     };
 
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    // Initial update
+    updateNavHeight();
+
+    // Create a MutationObserver to watch for changes to the navbar and its children
+    const observer = new MutationObserver(() => {
+      updateNavHeight();
+    });
+
+    // Start observing the navbar element
+    if (navbarRef.current) {
+      observer.observe(navbarRef.current, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    // Cleanup
+    return () => observer.disconnect();
   }, []);
 
   return (
