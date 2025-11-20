@@ -402,9 +402,9 @@ export default function WorkoutPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b">
+      <div className="sticky top-[env(safe-area-inset-top)] z-10 bg-background border-b">
         <div className="container px-4 py-3">
-          <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center justify-between gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -538,7 +538,7 @@ export default function WorkoutPage() {
       </div>
 
       {/* Footer Actions */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t safe-area-inset-bottom z-10">
+      <div className="sticky bottom-[81px] inset-x-0 bg-background border-t safe-area-inset-bottom z-10">
         <div className="container px-4 py-3">
           <div className="flex items-center justify-between gap-2">
             <SaveWorkoutDialog
