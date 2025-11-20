@@ -72,16 +72,19 @@ export default function Navbar() {
               </Link>
             );
           })}
-          <Link
-            href={ROUTES.WORKOUT}
-            className="relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1"
-            title="Log workout"
-            aria-label="Log workout"
-          >
-            <div className="p-4 rounded-full bg-brand text-brand-foreground shadow-lg">
-              <Plus size={24} className={"text-brand-foreground"} />
-            </div>
-          </Link>
+          {pathname !== ROUTES.WORKOUT ? (
+            // TODO: refine with transition rather than conditional rendering
+            <Link
+              href={ROUTES.WORKOUT}
+              className="relative flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1"
+              title="Log workout"
+              aria-label="Log workout"
+            >
+              <div className="p-4 rounded-full bg-brand text-brand-foreground shadow-lg">
+                <Plus size={24} className={"text-brand-foreground"} />
+              </div>
+            </Link>
+          ) : null}
         </div>
       </nav>
     </div>
