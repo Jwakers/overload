@@ -5,29 +5,51 @@ import { cn } from "@/lib/utils";
 import { Dumbbell, Home, Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
+
+const navItems = [
+  {
+    name: "Dashboard",
+    href: ROUTES.DASHBOARD,
+    icon: Home,
+  },
+  {
+    name: "Splits",
+    href: ROUTES.SPLITS,
+    icon: Dumbbell,
+  },
+  {
+    name: "Settings",
+    href: ROUTES.SETTINGS,
+    icon: Settings,
+  },
+];
 
 export default function Navbar() {
   const pathname = usePathname();
-  const navItems = [
-    {
-      name: "Dashboard",
-      href: ROUTES.DASHBOARD,
-      icon: Home,
-    },
-    {
-      name: "Splits",
-      href: ROUTES.SPLITS,
-      icon: Dumbbell,
-    },
-    {
-      name: "Settings",
-      href: ROUTES.SETTINGS,
-      icon: Settings,
-    },
-  ];
+  const navbarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const navHeight = navbarRef.current?.clientHeight;
+
+      if (!navHeight) return;
+      document.documentElement.style.setProperty(
+        "--nav-height",
+        `${navHeight + 1}px` // Add 1px to account for the border
+      );
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
-    <div className="bg-background border-t border-border safe-area-inset-bottom">
+    <div
+      className="bg-background border-t border-border safe-area-inset-bottom"
+      ref={navbarRef}
+    >
       <nav className="container py-1">
         <div className="flex justify-around items-center">
           {navItems.map((item) => {
