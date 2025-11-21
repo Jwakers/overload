@@ -214,16 +214,37 @@ export async function recalculateExercisePerformance(
     return;
   }
 
-  // Get the most recent completed session
-  const lastSession = completedSessions[0]!;
+  // Find the most recent completed session that has sets for this exercise
+  let lastSession: (typeof completedSessions)[number] | undefined;
+  let allSetsFromLastWorkout: Doc<"exerciseSets">["sets"][number][] = [];
 
-  // Get exercise sets from the last completed workout
-  const lastWorkoutSets = exerciseSets.filter(
-    (es) => es.workoutSessionId === lastSession._id
-  );
+  for (const session of completedSessions) {
+    if (!session) continue;
+    const lastWorkoutSets = exerciseSets.filter(
+      (es) => es.workoutSessionId === session._id
+    );
+    allSetsFromLastWorkout = lastWorkoutSets.flatMap((set) => set.sets);
+    if (allSetsFromLastWorkout.length > 0) {
+      lastSession = session;
+      break;
+    }
+  }
 
-  const allSetsFromLastWorkout = lastWorkoutSets.flatMap((set) => set.sets);
-  if (allSetsFromLastWorkout.length === 0) return;
+  // If no completed sessions have sets, clear last workout data
+  if (!lastSession || allSetsFromLastWorkout.length === 0) {
+    if (existingPerformance) {
+      await ctx.db.patch(existingPerformance._id, {
+        lastWeight: undefined,
+        lastWeightUnit: undefined,
+        lastReps: undefined,
+        lastSets: undefined,
+        lastWorkoutDate: undefined,
+        lastIsBodyWeight: undefined,
+        totalWorkouts: sessionIds.length,
+      });
+    }
+    return;
+  }
 
   const bestSetFromLastWorkout = getBestSet(allSetsFromLastWorkout);
 
