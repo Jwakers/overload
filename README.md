@@ -38,9 +38,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Hyphenated exercises are harder to search for (eg Pull ups does not show Pull-Ups)
 - [x] Splits should not be active/inactive, they should just get deleted and removed from workout sessions that had them assigned.
 - [ ] When setting and saving PB and performance data we must account for difference in weight unit
-- [ ] When a workout session is deleted, exercise performance is not re-evaluated/removed
-- [ ] No way to sign out
-- [ ] Toast descriptions are too light for example when used for push notification toasts
+- [x] When a workout session is deleted, exercise performance is not re-evaluated/removed
 - [ ] The PB styling on sets when it comes to body weight is not working as intended
 - [ ] Clicking toasts close the drawers
 - [ ] If there are multiple "Add to split banners" both of them say adding... during the loading state. Needs to be scoped to the individual button not all (they should all be disabled during submissions still)

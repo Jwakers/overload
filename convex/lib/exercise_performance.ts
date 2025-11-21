@@ -47,7 +47,7 @@ export async function updatePersonalBest(
   if (!bestSession) return;
   const workoutDate = bestSession.startedAt;
 
-  // Check if this is a new personal best
+  // Get existing performance record
   const existingPerformance = await ctx.db
     .query("exercisePerformance")
     .withIndex("by_user_id_and_exercise", (q) =>
@@ -55,44 +55,29 @@ export async function updatePersonalBest(
     )
     .first();
 
-  let personalBest = existingPerformance?.personalBest;
-  const bestWeight = bestSet.weight;
-  const bestReps = bestSet.reps;
-  const existingBestWeight = personalBest?.weight ?? 0;
-  const existingBestReps = personalBest?.reps ?? 0;
+  // Always update the personal best to reflect the current best from all remaining sets
+  // This is important when sets are deleted - we need to update even if the new best is worse
+  const personalBest = {
+    weight: bestSet.weight,
+    weightUnit: bestSet.weightUnit,
+    isBodyWeight: bestSet.isBodyWeight,
+    reps: bestSet.reps,
+    date: workoutDate,
+  };
 
-  // Update personal best if weight is higher, or if weight is equal and reps are higher
-  let isNewPersonalBest =
-    bestWeight > existingBestWeight ||
-    (bestWeight === existingBestWeight && bestReps > existingBestReps);
-
-  if (bestSet.isBodyWeight) {
-    isNewPersonalBest = bestReps > existingBestReps;
-  }
-
-  if (isNewPersonalBest) {
-    personalBest = {
-      weight: bestSet.weight,
-      weightUnit: bestSet.weightUnit,
-      isBodyWeight: bestSet.isBodyWeight,
-      reps: bestSet.reps,
-      date: workoutDate,
-    };
-
-    if (existingPerformance) {
-      await ctx.db.patch(existingPerformance._id, {
-        personalBest,
-        totalWorkouts,
-      });
-    } else {
-      // Create new performance record if it doesn't exist
-      await ctx.db.insert("exercisePerformance", {
-        userId,
-        exerciseId,
-        personalBest,
-        totalWorkouts,
-      });
-    }
+  if (existingPerformance) {
+    await ctx.db.patch(existingPerformance._id, {
+      personalBest,
+      totalWorkouts,
+    });
+  } else {
+    // Create new performance record if it doesn't exist
+    await ctx.db.insert("exercisePerformance", {
+      userId,
+      exerciseId,
+      personalBest,
+      totalWorkouts,
+    });
   }
 }
 
