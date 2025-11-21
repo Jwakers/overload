@@ -163,6 +163,102 @@ export async function updateLastWorkoutData(
   await ctx.db.insert("exercisePerformance", performanceData);
 }
 
+// Recalculate all exercise performance data
+export async function recalculateExercisePerformance(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+  exerciseId: Id<"exercises">
+) {
+  // Get all exercise sets for this user and exercise
+  const exerciseSets = await ctx.db
+    .query("exerciseSets")
+    .withIndex("by_exercise_id_and_user_id", (q) =>
+      q.eq("exerciseId", exerciseId).eq("userId", userId)
+    )
+    .collect();
+
+  // Get existing performance record
+  const existingPerformance = await ctx.db
+    .query("exercisePerformance")
+    .withIndex("by_user_id_and_exercise", (q) =>
+      q.eq("userId", userId).eq("exerciseId", exerciseId)
+    )
+    .first();
+
+  // If no exercise sets remain, clear the performance data
+  if (exerciseSets.length === 0) {
+    if (existingPerformance) await ctx.db.delete(existingPerformance._id);
+
+    return;
+  }
+
+  // Recalculate personal best (handles all sets across all sessions)
+  await updatePersonalBest(ctx, userId, exerciseId);
+
+  // Get unique workout session IDs and their completion dates
+  const sessionIds = [
+    ...new Set(exerciseSets.map((es) => es.workoutSessionId)),
+  ];
+  const sessions = await Promise.all(
+    sessionIds.map((sessionId) => ctx.db.get(sessionId))
+  );
+
+  // Find the most recent completed workout session
+  const completedSessions = sessions
+    .filter((s) => s && s.completedAt !== undefined)
+    .sort((a, b) => (b!.completedAt || 0) - (a!.completedAt || 0));
+
+  if (completedSessions.length === 0) {
+    // No completed sessions, clear last workout data but keep PB
+    if (existingPerformance) {
+      await ctx.db.patch(existingPerformance._id, {
+        lastWeight: undefined,
+        lastWeightUnit: undefined,
+        lastReps: undefined,
+        lastSets: undefined,
+        lastWorkoutDate: undefined,
+        lastIsBodyWeight: undefined,
+        totalWorkouts: sessionIds.length,
+      });
+    }
+    return;
+  }
+
+  // Get the most recent completed session
+  const lastSession = completedSessions[0]!;
+
+  // Get exercise sets from the last completed workout
+  const lastWorkoutSets = exerciseSets.filter(
+    (es) => es.workoutSessionId === lastSession._id
+  );
+
+  const allSetsFromLastWorkout = lastWorkoutSets.flatMap((set) => set.sets);
+  if (allSetsFromLastWorkout.length === 0) return;
+
+  const bestSetFromLastWorkout = getBestSet(allSetsFromLastWorkout);
+
+  // Update last workout data
+  const performanceData = {
+    lastWeight: bestSetFromLastWorkout.weight,
+    lastWeightUnit: bestSetFromLastWorkout.weightUnit,
+    lastReps: bestSetFromLastWorkout.reps,
+    lastSets: allSetsFromLastWorkout.length,
+    lastWorkoutDate: lastSession.startedAt,
+    lastIsBodyWeight: bestSetFromLastWorkout.isBodyWeight,
+    totalWorkouts: sessionIds.length,
+  };
+
+  if (existingPerformance) {
+    await ctx.db.patch(existingPerformance._id, performanceData);
+  } else {
+    await ctx.db.insert("exercisePerformance", {
+      userId,
+      exerciseId,
+      ...performanceData,
+    });
+  }
+}
+
 function getBestSet(
   sets: (Doc<"exerciseSets">["sets"][number] & {
     _sessionId?: Id<"workoutSessions">;

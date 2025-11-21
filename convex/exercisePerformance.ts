@@ -1,6 +1,9 @@
 import { v } from "convex/values";
 import { internalMutation, query } from "./_generated/server";
-import { updateLastWorkoutData } from "./lib/exercise_performance";
+import {
+  recalculateExercisePerformance,
+  updateLastWorkoutData,
+} from "./lib/exercise_performance";
 import { getCurrentUserOrThrow } from "./users";
 
 export const get = query({
@@ -36,6 +39,20 @@ export const updateLastWorkout = internalMutation({
           exerciseId,
           args.workoutSessionId
         )
+      )
+    );
+  },
+});
+
+export const recalculatePerformance = internalMutation({
+  args: {
+    userId: v.id("users"),
+    exerciseIds: v.array(v.id("exercises")),
+  },
+  handler: async (ctx, args) => {
+    await Promise.all(
+      args.exerciseIds.map((exerciseId) =>
+        recalculateExercisePerformance(ctx, args.userId, exerciseId)
       )
     );
   },
