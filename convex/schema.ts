@@ -41,7 +41,7 @@ export default defineSchema({
     name: v.string(),
     description: v.optional(v.string()),
     exercises: v.array(v.id("exercises")),
-    isActive: v.boolean(),
+    isActive: v.optional(v.boolean()), // Deprecated: kept for backward compatibility with existing data
     updatedAt: v.number(),
   }).index("by_user_id", ["userId"]),
 

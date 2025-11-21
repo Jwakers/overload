@@ -13,11 +13,18 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - Review readme and prioritize next steps
 - When there is nothing in the exercise list (new session, new split) Add some basic copy to instruct mentioning how you are prompted to add exercises to your split as you go
 
-## Usage notes
+## Usage notes and updates
 
 - PB styling is applied when reps decrease but weight remains the same
 - Dashboard is slow to load; add a loading.tsx file.
 - Occasionally I need a reminder of how to do an exercise properly. An exercise description/how-to would be great. There can be a small button in the exercise set that can display the description
+- When on the workout page. The bottom nav should be reduced to a more compact size
+- when remounting/ screen lock and open, the set weigh resets to the last sessions weight, even if overriden
+- When a user closes an unsaved workout. A persistent banner should ask if they are done and if they want to save resume or delete. The workout should also have the completed at set to when it was closed not when it was saved
+- Dashboard should have a quick resume workout card at the top
+- Dashboard data wastes important space. These stats are mostly unhelpful and should be moved
+- Edit mode for recipes should instead be handles section by section not all at once to allow granularity
+- An option to delete/reset PBs (one or all)
 
 ## 🏋️‍♂️ Development Todo List
 
@@ -28,19 +35,18 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Notifications section in settings. Green tick is squashed on Iphone
 - [x] On saving a workout session, all unsaved exercise sets should be saved first or at least warn that they are not saved
 - [x] Signed out users can see the nav and start workouts
-- [ ] Hyphenated exercises are harder to search for (eg Pull ups does not show Pull-Ups)
-- [ ] Splits should not be active/inactive, they should just get deleted and removed from workout sessions that had them assigned.
-- [ ] Edit exercise button does not work (happened when workout sets were all deleted)
+- [x] Hyphenated exercises are harder to search for (eg Pull ups does not show Pull-Ups)
+- [x] Splits should not be active/inactive, they should just get deleted and removed from workout sessions that had them assigned.
 - [ ] When setting and saving PB and performance data we must account for difference in weight unit
-- [ ] Should not be able to delete sets unless the exercise set isActive
-- [ ] Add exercise to split banner shows when no split is selected
-- [ ] When a workout session is deleted, exercise performance is not re-evaluated/removed
-- [ ] No way to sign out
-- [ ] Toast descriptions are too light for example when used for push notification toasts
-- [ ] The PB styling on sets when it comes to body weight is not working as intended
-- [ ] Clicking toasts close the drawers
+- [x] When a workout session is deleted, exercise performance is not re-evaluated/removed
+- [x] The PB styling on sets when it comes to body weight is not working as intended
 - [ ] If there are multiple "Add to split banners" both of them say adding... during the loading state. Needs to be scoped to the individual button not all (they should all be disabled during submissions still)
 - [ ] It is possible to start a workout session, close it without adding any exercises, and it remains in the DB. It should either: delete if empty OR on creating workout sessions, check for active empty ones and clean up before returning the new one. The issue here is you could resume an active workout that was started on a different day, so the data would not be completely accurate
+- [ ] The nav and header offsets on the workout page are incorrect on iPhone
+- [ ] You are able to add workouts through quick start in rapid succession. It should be disabled when loading a workout. Better still use optimistic updates
+- [x] PBS are not recalculated if entered by mistake (deleting a PB set)
+- [ ] Saving a set can just hang if bad signal or locking phone during a save
+- [ ] App falsely claims to be resuming a workout when starting a new one
 
 ### Phase 1: Project Setup & Dependencies
 
@@ -241,6 +247,20 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - **Clerk**: Implement proper role-based access control
 - **Performance**: Use optimistic updates for better UX during workouts
 - **Data Structure**: Design for efficient querying of workout history and progression
+
+## 📦 Migrations
+
+### Remove isActive from Splits (2024)
+
+The `isActive` field has been removed from splits. To clean up existing data:
+
+**Via Convex Dashboard**
+
+1. Go to your Convex dashboard
+2. Navigate to Functions → `splits:migrateRemoveIsActive`
+3. Run the internal mutation with empty args: `{}`
+
+The migration will remove the deprecated `isActive` field from all splits. After running successfully, you can safely remove the migration code and endpoint.
 
 ## 📚 Tech Stack
 

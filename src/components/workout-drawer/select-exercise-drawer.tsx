@@ -56,12 +56,18 @@ export function SelectExerciseDrawer({
 
     // Apply search filter (by exercise name)
     if (searchValue) {
-      const sv = searchValue.toLowerCase();
-      filtered = filtered.filter(
-        (exercise) =>
-          exercise.name.toLowerCase().includes(sv) ||
-          sv.includes(exercise.name.toLowerCase())
-      );
+      // Normalize text by removing hyphens, spaces, and special characters for better matching
+      const normalizeText = (text: string) =>
+        text.toLowerCase().replace(/[\s\-_.,;:'"!?()]/g, "");
+
+      const normalizedSearch = normalizeText(searchValue);
+      filtered = filtered.filter((exercise) => {
+        const normalizedName = normalizeText(exercise.name);
+        return (
+          normalizedName.includes(normalizedSearch) ||
+          normalizedSearch.includes(normalizedName)
+        );
+      });
     }
 
     return filtered;

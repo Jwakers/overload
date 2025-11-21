@@ -215,11 +215,24 @@ export const deleteWorkoutSession = mutation({
       )
       .collect();
 
+    // Get unique exercise IDs before deleting the sets
+    const exerciseIds = [...new Set(exerciseSets.map((set) => set.exerciseId))];
+
     await Promise.all(
       exerciseSets.map((exerciseSet) => ctx.db.delete(exerciseSet._id))
     );
 
     await ctx.db.delete(workoutSession._id);
+
+    // Recalculate exercise performance for all affected exercises
+    await ctx.scheduler.runAfter(
+      0,
+      internal.exercisePerformance.recalculatePerformance,
+      {
+        userId: workoutSession.userId,
+        exerciseIds,
+      }
+    );
   },
 });
 

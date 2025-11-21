@@ -1,7 +1,10 @@
 import { v } from "convex/values";
 import { Doc, Id } from "./_generated/dataModel";
 import { mutation, MutationCtx, query } from "./_generated/server";
-import { updatePersonalBest } from "./lib/exercise_performance";
+import {
+  recalculateExercisePerformance,
+  updatePersonalBest,
+} from "./lib/exercise_performance";
 import { getCurrentUserOrThrow } from "./users";
 
 export const create = mutation({
@@ -195,11 +198,21 @@ export const deleteExerciseSet = mutation({
 
     await ctx.db.delete(args.exerciseSetId);
 
-    await updatePersonalBest(
-      ctx,
-      workoutSession.userId,
-      exerciseSet.exerciseId
-    );
+    // If the workout is completed, recalculate all performance data
+    // Otherwise just update personal best
+    if (workoutSession.completedAt) {
+      await recalculateExercisePerformance(
+        ctx,
+        workoutSession.userId,
+        exerciseSet.exerciseId
+      );
+    } else {
+      await updatePersonalBest(
+        ctx,
+        workoutSession.userId,
+        exerciseSet.exerciseId
+      );
+    }
   },
 });
 
@@ -218,11 +231,21 @@ export const deleteSet = mutation({
       sets: exerciseSet.sets.filter((set) => set.id !== args.setId),
     });
 
-    await updatePersonalBest(
-      ctx,
-      workoutSession.userId,
-      exerciseSet.exerciseId
-    );
+    // If the workout is completed, recalculate all performance data
+    // Otherwise just update personal best
+    if (workoutSession.completedAt) {
+      await recalculateExercisePerformance(
+        ctx,
+        workoutSession.userId,
+        exerciseSet.exerciseId
+      );
+    } else {
+      await updatePersonalBest(
+        ctx,
+        workoutSession.userId,
+        exerciseSet.exerciseId
+      );
+    }
   },
 });
 

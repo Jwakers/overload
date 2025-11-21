@@ -36,15 +36,7 @@ export function SplitListItem({
       <button type="button" className="group cursor-pointer" onClick={onSelect}>
         <Card className="cursor-pointer group-hover:border-brand transition-colors">
           <CardHeader>
-            <div className="flex items-start justify-between gap-2">
-              <CardTitle>{split.name}</CardTitle>
-              <Badge
-                variant={split.isActive ? "default" : "secondary"}
-                className="text-xs shrink-0"
-              >
-                {split.isActive ? "Active" : "Inactive"}
-              </Badge>
-            </div>
+            <CardTitle>{split.name}</CardTitle>
           </CardHeader>
 
           <CardContent>
@@ -97,15 +89,7 @@ export function SplitListItem({
       onClick={onSelect}
     >
       <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="font-medium">{split.name}</h4>
-          <Badge
-            variant={split.isActive ? "default" : "secondary"}
-            className="text-xs shrink-0"
-          >
-            {split.isActive ? "Active" : "Inactive"}
-          </Badge>
-        </div>
+        <h4 className="font-medium">{split.name}</h4>
 
         {split.description && (
           <p className="text-sm text-muted-foreground text-left line-clamp-2">
