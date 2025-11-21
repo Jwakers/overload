@@ -162,23 +162,28 @@ export async function recalculateExercisePerformance(
     )
     .collect();
 
-  // Get existing performance record
+  // If no exercise sets remain, clear the performance data
+  if (exerciseSets.length === 0) {
+    const existingPerformance = await ctx.db
+      .query("exercisePerformance")
+      .withIndex("by_user_id_and_exercise", (q) =>
+        q.eq("userId", userId).eq("exerciseId", exerciseId)
+      )
+      .first();
+    if (existingPerformance) await ctx.db.delete(existingPerformance._id);
+    return;
+  }
+
+  // Recalculate personal best (handles all sets across all sessions)
+  await updatePersonalBest(ctx, userId, exerciseId);
+
+  // Re-fetch performance after PB recalculation so we work with the current record
   const existingPerformance = await ctx.db
     .query("exercisePerformance")
     .withIndex("by_user_id_and_exercise", (q) =>
       q.eq("userId", userId).eq("exerciseId", exerciseId)
     )
     .first();
-
-  // If no exercise sets remain, clear the performance data
-  if (exerciseSets.length === 0) {
-    if (existingPerformance) await ctx.db.delete(existingPerformance._id);
-
-    return;
-  }
-
-  // Recalculate personal best (handles all sets across all sessions)
-  await updatePersonalBest(ctx, userId, exerciseId);
 
   // Get unique workout session IDs and their completion dates
   const sessionIds = [
