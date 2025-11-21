@@ -5,7 +5,7 @@ export async function updatePersonalBest(
   ctx: MutationCtx,
   userId: Id<"users">,
   exerciseId: Id<"exercises">
-) {
+): Promise<Id<"exercisePerformance"> | undefined> {
   // Recompute PB across ALL sessions for this user/exercise
   const exerciseSets = await ctx.db
     .query("exerciseSets")
@@ -36,8 +36,9 @@ export async function updatePersonalBest(
         personalBest: undefined,
         totalWorkouts,
       });
+      return existingPerformance._id;
     }
-    return;
+    return undefined;
   }
 
   const bestSet = getBestSet(allSets) as (typeof allSets)[number];
@@ -70,14 +71,16 @@ export async function updatePersonalBest(
       personalBest,
       totalWorkouts,
     });
+    return existingPerformance._id;
   } else {
     // Create new performance record if it doesn't exist
-    await ctx.db.insert("exercisePerformance", {
+    const newId = await ctx.db.insert("exercisePerformance", {
       userId,
       exerciseId,
       personalBest,
       totalWorkouts,
     });
+    return newId;
   }
 }
 
@@ -175,15 +178,12 @@ export async function recalculateExercisePerformance(
   }
 
   // Recalculate personal best (handles all sets across all sessions)
-  await updatePersonalBest(ctx, userId, exerciseId);
+  const performanceId = await updatePersonalBest(ctx, userId, exerciseId);
 
-  // Re-fetch performance after PB recalculation so we work with the current record
-  const existingPerformance = await ctx.db
-    .query("exercisePerformance")
-    .withIndex("by_user_id_and_exercise", (q) =>
-      q.eq("userId", userId).eq("exerciseId", exerciseId)
-    )
-    .first();
+  // Use the performance ID returned by updatePersonalBest (avoids re-query)
+  const existingPerformance = performanceId
+    ? await ctx.db.get(performanceId)
+    : undefined;
 
   // Get unique workout session IDs and their completion dates
   const sessionIds = [
