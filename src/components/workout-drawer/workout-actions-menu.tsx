@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -93,17 +92,7 @@ export function WorkoutActionsMenu({
 
           {selectedSplit ? (
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  {selectedSplit.name}
-                </span>
-                <Badge
-                  variant={selectedSplit.isActive ? "default" : "secondary"}
-                  className="text-xs"
-                >
-                  {selectedSplit.isActive ? "Active" : "Inactive"}
-                </Badge>
-              </div>
+              <span className="text-sm font-medium">{selectedSplit.name}</span>
 
               {selectedSplit.description && (
                 <p className="text-xs text-muted-foreground line-clamp-2">
@@ -131,7 +120,6 @@ export function WorkoutActionsMenu({
                 <DropdownMenuItem
                   key={split._id}
                   onClick={() => handleSplitSelect(split._id)}
-                  className="flex items-center justify-between"
                 >
                   <div className="flex flex-col items-start">
                     <span className="text-sm">{split.name}</span>
@@ -139,12 +127,6 @@ export function WorkoutActionsMenu({
                       {split.exercises.length} exercises
                     </span>
                   </div>
-                  <Badge
-                    variant={split.isActive ? "default" : "secondary"}
-                    className="text-xs"
-                  >
-                    {split.isActive ? "Active" : "Inactive"}
-                  </Badge>
                 </DropdownMenuItem>
               ))}
             {splits.filter((split) => split._id !== selectedSplitId).length >

@@ -1,6 +1,11 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
-import { mutation, query, QueryCtx } from "./_generated/server";
+import {
+  internalMutation,
+  mutation,
+  query,
+  QueryCtx,
+} from "./_generated/server";
 import { getCurrentUserOrThrow } from "./users";
 
 const _assertAccess = async (ctx: QueryCtx, splitId: Id<"splits">) => {
@@ -76,7 +81,6 @@ export const createSplit = mutation({
       name: args.name,
       description: args.description,
       exercises: args.exercises,
-      isActive: true,
       updatedAt: Date.now(),
     });
 
@@ -100,5 +104,28 @@ export const addExercisesToSplit = mutation({
     });
 
     return split._id;
+  },
+});
+
+/**
+ * Migration: Remove deprecated isActive field from all splits
+ * This is an internal mutation that can be called once to clean up existing data
+ */
+export const migrateRemoveIsActive = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const splits = await ctx.db.query("splits").collect();
+    let updated = 0;
+
+    for (const split of splits) {
+      if ("isActive" in split) {
+        await ctx.db.patch(split._id, {
+          isActive: undefined,
+        });
+        updated++;
+      }
+    }
+
+    return { total: splits.length, updated };
   },
 });

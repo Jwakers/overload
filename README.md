@@ -36,7 +36,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] On saving a workout session, all unsaved exercise sets should be saved first or at least warn that they are not saved
 - [x] Signed out users can see the nav and start workouts
 - [x] Hyphenated exercises are harder to search for (eg Pull ups does not show Pull-Ups)
-- [ ] Splits should not be active/inactive, they should just get deleted and removed from workout sessions that had them assigned.
+- [x] Splits should not be active/inactive, they should just get deleted and removed from workout sessions that had them assigned.
 - [ ] Edit exercise button does not work (happened when workout sets were all deleted)
 - [ ] When setting and saving PB and performance data we must account for difference in weight unit
 - [ ] Should not be able to delete sets unless the exercise set isActive
@@ -253,6 +253,20 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - **Clerk**: Implement proper role-based access control
 - **Performance**: Use optimistic updates for better UX during workouts
 - **Data Structure**: Design for efficient querying of workout history and progression
+
+## 📦 Migrations
+
+### Remove isActive from Splits (2024)
+
+The `isActive` field has been removed from splits. To clean up existing data:
+
+**Via Convex Dashboard**
+
+1. Go to your Convex dashboard
+2. Navigate to Functions → `splits:migrateRemoveIsActive`
+3. Run the internal mutation with empty args: `{}`
+
+The migration will remove the deprecated `isActive` field from all splits. After running successfully, you can safely remove the migration code and endpoint.
 
 ## 📚 Tech Stack
 
