@@ -39,14 +39,13 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - [x] Splits should not be active/inactive, they should just get deleted and removed from workout sessions that had them assigned.
 - [ ] When setting and saving PB and performance data we must account for difference in weight unit
 - [x] When a workout session is deleted, exercise performance is not re-evaluated/removed
-- [ ] The PB styling on sets when it comes to body weight is not working as intended
-- [ ] Clicking toasts close the drawers
+- [x] The PB styling on sets when it comes to body weight is not working as intended
 - [ ] If there are multiple "Add to split banners" both of them say adding... during the loading state. Needs to be scoped to the individual button not all (they should all be disabled during submissions still)
 - [ ] It is possible to start a workout session, close it without adding any exercises, and it remains in the DB. It should either: delete if empty OR on creating workout sessions, check for active empty ones and clean up before returning the new one. The issue here is you could resume an active workout that was started on a different day, so the data would not be completely accurate
 - [ ] The nav and header offsets on the workout page are incorrect on iPhone
 - [ ] You are able to add workouts through quick start in rapid succession. It should be disabled when loading a workout. Better still use optimistic updates
-- [ ] PBS are not recalculated if entered by mistake (deleting a PB set)
-- [ ] aving set can just hang if bad single or locking phone during a save
+- [x] PBS are not recalculated if entered by mistake (deleting a PB set)
+- [ ] Saving a set can just hang if bad signal or locking phone during a save
 - [ ] App falsely claims to be resuming a workout when starting a new one
 
 ### Phase 1: Project Setup & Dependencies
