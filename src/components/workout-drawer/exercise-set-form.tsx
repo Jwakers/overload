@@ -476,7 +476,6 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
           toast.warning(
             "Your body weight hasn't been updated in over 7 days. Consider updating it in settings for accuracy."
           );
-          return;
         }
       }
     }
