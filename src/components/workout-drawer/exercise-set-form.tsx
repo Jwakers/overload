@@ -437,6 +437,9 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
   const [isBodyWeight, setIsBodyWeight] = useState(false);
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Track if the form has been initialized to prevent overwriting user input
+  const hasInitialized = useRef(false);
+
   // Store the initial PB when component mounts to compare against throughout the workout
   const [initialPersonalBest, setInitialPersonalBest] = useState<{
     weight: number;
@@ -473,7 +476,6 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
           toast.warning(
             "Your body weight hasn't been updated in over 7 days. Consider updating it in settings for accuracy."
           );
-          return;
         }
       }
     }
@@ -522,9 +524,14 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
           form.resetField("reps");
           form.resetField("notes");
           setShowNotes(false);
+          // Reset initialization flag so next set can be preset with this set's weight
+          hasInitialized.current = false;
           return "Set saved";
         },
-        error: "Failed to add set. Please try again.",
+        error: () => {
+          hasInitialized.current = false;
+          return "Failed to add set. Please try again.";
+        },
         finally: () => setIsPending(false),
       }
     );
@@ -552,14 +559,39 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
         reps: exercisePerformance.personalBest.reps,
       });
     }
-    if (exercisePerformance?.lastWeight !== undefined) {
-      form.setValue("weight", exercisePerformance.lastWeight.toString());
-    }
+  }, [exercisePerformance, initialPersonalBest]);
 
-    if (exercisePerformance?.lastIsBodyWeight) {
-      setIsBodyWeight(true);
+  // Initialize form values only once on mount
+  useEffect(() => {
+    // Skip if already initialized or data not ready
+    if (hasInitialized.current || !exerciseSet) return;
+
+    const hasSets = exerciseSet.sets.length > 0;
+
+    if (hasSets) {
+      // For subsequent sets (2nd, 3rd, etc.), use the previous set's weight
+      const lastSet = exerciseSet.sets.at(-1);
+
+      if (lastSet?.isBodyWeight) {
+        setIsBodyWeight(true);
+      } else {
+        form.setValue("weight", lastSet?.weight.toString() || "");
+      }
+      // Mark as initialized since we have set data
+      hasInitialized.current = true;
+    } else if (exercisePerformance !== undefined) {
+      // For the first set, use the last workout's weight (if available)
+      // Only initialize once exercisePerformance has loaded (even if null)
+      if (exercisePerformance?.lastIsBodyWeight) {
+        setIsBodyWeight(true);
+      } else if (exercisePerformance?.lastWeight !== undefined) {
+        form.setValue("weight", exercisePerformance.lastWeight.toString());
+      }
+      // Mark as initialized now that performance data has loaded
+      hasInitialized.current = true;
     }
-  }, [exercisePerformance, initialPersonalBest, form]);
+    // Don't mark as initialized if we're still waiting for exercisePerformance to load
+  }, [exerciseSet, exercisePerformance, form]);
 
   // Helper function to check if a set is a personal best achievement
   const getPersonalBestStatus = (set: Doc<"exerciseSets">["sets"][number]) => {
