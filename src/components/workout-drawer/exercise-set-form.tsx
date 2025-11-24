@@ -528,7 +528,10 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
           hasInitialized.current = false;
           return "Set saved";
         },
-        error: "Failed to add set. Please try again.",
+        error: () => {
+          hasInitialized.current = false;
+          return "Failed to add set. Please try again.";
+        },
         finally: () => setIsPending(false),
       }
     );
