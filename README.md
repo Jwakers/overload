@@ -19,7 +19,6 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 - Dashboard is slow to load; add a loading.tsx file.
 - Occasionally I need a reminder of how to do an exercise properly. An exercise description/how-to would be great. There can be a small button in the exercise set that can display the description
 - When on the workout page. The bottom nav should be reduced to a more compact size
-- when remounting/ screen lock and open, the set weigh resets to the last sessions weight, even if overriden
 - When a user closes an unsaved workout. A persistent banner should ask if they are done and if they want to save resume or delete. The workout should also have the completed at set to when it was closed not when it was saved
 - Dashboard should have a quick resume workout card at the top
 - Dashboard data wastes important space. These stats are mostly unhelpful and should be moved
