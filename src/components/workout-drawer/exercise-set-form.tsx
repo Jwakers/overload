@@ -575,16 +575,20 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
       } else {
         form.setValue("weight", lastSet?.weight.toString() || "");
       }
-    } else if (exercisePerformance) {
-      // For the first set, use the last workout's weight
-      if (exercisePerformance.lastIsBodyWeight) {
+      // Mark as initialized since we have set data
+      hasInitialized.current = true;
+    } else if (exercisePerformance !== undefined) {
+      // For the first set, use the last workout's weight (if available)
+      // Only initialize once exercisePerformance has loaded (even if null)
+      if (exercisePerformance?.lastIsBodyWeight) {
         setIsBodyWeight(true);
-      } else if (exercisePerformance.lastWeight !== undefined) {
+      } else if (exercisePerformance?.lastWeight !== undefined) {
         form.setValue("weight", exercisePerformance.lastWeight.toString());
       }
+      // Mark as initialized now that performance data has loaded
+      hasInitialized.current = true;
     }
-
-    hasInitialized.current = true;
+    // Don't mark as initialized if we're still waiting for exercisePerformance to load
   }, [exerciseSet, exercisePerformance, form]);
 
   // Helper function to check if a set is a personal best achievement
