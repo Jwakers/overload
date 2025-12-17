@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SelectExerciseDrawer } from "@/components/workout-drawer/select-exercise-drawer";
 import { ROUTES } from "@/constants";
 import { api } from "@/convex/_generated/api";
-import type { Doc, Id } from "@/convex/_generated/dataModel";
+import type { Id } from "@/convex/_generated/dataModel";
 import {
   DragDropContext,
   Draggable,
@@ -26,7 +26,7 @@ import {
 import { useMutation, useQuery } from "convex/react";
 import { ArrowLeft, GripVertical, Plus, Save, Trash2, X } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -52,16 +52,12 @@ export default function SplitEditPage({
   const [description, setDescription] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
   const [selectExerciseOpen, setSelectExerciseOpen] = useState(false);
-  const [orderedExercises, setOrderedExercises] = useState<Doc<"exercises">[]>(
-    []
-  );
 
   // Initialize form values when split data loads
   useEffect(() => {
     if (split) {
       setName(split.name);
       setDescription(split.description || "");
-      setOrderedExercises(split.exercises);
     }
   }, [split]);
 
@@ -118,13 +114,7 @@ export default function SplitEditPage({
       }),
       {
         loading: "Removing exercise...",
-        success: () => {
-          // Update local state optimistically
-          setOrderedExercises((prev) =>
-            prev.filter((ex) => ex._id !== exerciseId)
-          );
-          return "Exercise removed successfully!";
-        },
+        success: "Exercise removed successfully!",
         error: (err) => `Failed to remove exercise: ${err.message}`,
       }
     );
@@ -148,15 +138,14 @@ export default function SplitEditPage({
   };
 
   const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
+    if (!result.destination || !split) return;
 
-    const items = Array.from(orderedExercises);
+    // Calculate new order
+    const items = Array.from(split.exercises);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    setOrderedExercises(items);
-
-    // Save the new order to the backend
+    // Save the new order to the backend - Convex will reactively update the UI
     const exerciseIds = items.map((ex) => ex._id);
     toast.promise(
       reorderExercisesMutation({
@@ -166,13 +155,7 @@ export default function SplitEditPage({
       {
         loading: "Reordering exercises...",
         success: "Order updated successfully!",
-        error: (err) => {
-          // Revert on error
-          if (split) {
-            setOrderedExercises(split.exercises);
-          }
-          return `Failed to reorder: ${err.message}`;
-        },
+        error: (err) => `Failed to reorder: ${err.message}`,
       }
     );
   };
@@ -191,7 +174,6 @@ export default function SplitEditPage({
         error: (err) => `Failed to delete split: ${err.message}`,
       }
     );
-    router.push(ROUTES.SPLITS); 
   };
 
   if (split === undefined) {
@@ -210,18 +192,17 @@ export default function SplitEditPage({
     );
   }
 
+  // Split not found or access denied
+  if (split === null) {
+    notFound();
+  }
+
   return (
     <div className="container px-4 py-8 max-w-4xl mx-auto space-y-6">
       {/* Header with Back Button */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push("/splits")}
-          className="gap-2"
-          asChild
-        >
-          <Link href="/splits">
+        <Button variant="ghost" size="sm" className="gap-2" asChild>
+          <Link href={ROUTES.SPLITS}>
             <ArrowLeft size={16} />
             Back to Splits
           </Link>
@@ -242,7 +223,7 @@ export default function SplitEditPage({
             <Input
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value.trim())}
               placeholder="e.g., Push Day, Pull Day, Leg Day"
               maxLength={50}
             />
@@ -299,7 +280,7 @@ export default function SplitEditPage({
           </div>
         </CardHeader>
         <CardContent>
-          {orderedExercises.length === 0 ? (
+          {!split.exercises.length ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">
                 No exercises in this split yet
@@ -322,7 +303,7 @@ export default function SplitEditPage({
                     ref={provided.innerRef}
                     className="space-y-2"
                   >
-                    {orderedExercises.map((exercise, index) => (
+                    {split.exercises.map((exercise, index) => (
                       <Draggable
                         key={exercise._id}
                         draggableId={exercise._id}

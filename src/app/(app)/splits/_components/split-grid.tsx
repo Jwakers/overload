@@ -1,5 +1,6 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -102,10 +103,10 @@ function SplitGridEmpty() {
         </p>
         <CreateSplitDialog
           trigger={
-            <button className="bg-brand hover:bg-brand/90 text-brand-foreground px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-colors">
+            <Button className="gap-2">
               <Plus size={20} />
               Create Your First Split
-            </button>
+            </Button>
           }
         />
       </CardContent>
@@ -115,18 +116,10 @@ function SplitGridEmpty() {
 
 function SplitGridLoading() {
   return (
-    <div className="container px-4 py-8 max-w-6xl mx-auto">
-      <div className="animate-pulse space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="h-10 bg-muted rounded w-64"></div>
-          <div className="h-10 bg-muted rounded w-40"></div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-48 bg-muted rounded-lg"></div>
-          ))}
-        </div>
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="h-48 bg-muted rounded-lg"></div>
+      ))}
     </div>
   );
 }

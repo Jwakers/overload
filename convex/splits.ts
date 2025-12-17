@@ -47,15 +47,20 @@ export const getSplitById = query({
     id: v.id("splits"),
   },
   handler: async (ctx, args) => {
-    const split = await _assertAccess(ctx, args.id);
+    try {
+      const split = await _assertAccess(ctx, args.id);
 
-    const exercises = await Promise.all(
-      split.exercises?.map((exerciseId) => {
-        return ctx.db.get(exerciseId);
-      })
-    );
+      const exercises = await Promise.all(
+        split.exercises?.map((exerciseId) => {
+          return ctx.db.get(exerciseId);
+        })
+      );
 
-    return { ...split, exercises: exercises.filter((e) => e !== null) };
+      return { ...split, exercises: exercises.filter((e) => e !== null) };
+    } catch {
+      // Return null if split not found or access denied
+      return null;
+    }
   },
 });
 
@@ -179,7 +184,10 @@ export const reorderSplitExercises = mutation({
     const existingIds = new Set(split.exercises);
     const newIds = new Set(args.exerciseIds);
 
-    if (existingIds.size !== newIds.size) {
+    if (
+      existingIds.size !== newIds.size ||
+      newIds.size !== args.exerciseIds.length
+    ) {
       throw new Error("Exercise count mismatch");
     }
 
