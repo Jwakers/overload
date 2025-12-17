@@ -4,6 +4,7 @@ A Next.js and Convex-powered application to help track gym sets and manage progr
 
 // TODO next
 
+- Reordering splits should useOptimistic so we don't get the weird rendering bug
 - Edit update and delete splits on split management page
   - Add to workout dropdown an option to remove the split from a workout
 - Populate data proper from my records

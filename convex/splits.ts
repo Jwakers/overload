@@ -47,15 +47,20 @@ export const getSplitById = query({
     id: v.id("splits"),
   },
   handler: async (ctx, args) => {
-    const split = await _assertAccess(ctx, args.id);
+    try {
+      const split = await _assertAccess(ctx, args.id);
 
-    const exercises = await Promise.all(
-      split.exercises?.map((exerciseId) => {
-        return ctx.db.get(exerciseId);
-      })
-    );
+      const exercises = await Promise.all(
+        split.exercises?.map((exerciseId) => {
+          return ctx.db.get(exerciseId);
+        })
+      );
 
-    return { ...split, exercises: exercises.filter((e) => e !== null) };
+      return { ...split, exercises: exercises.filter((e) => e !== null) };
+    } catch {
+      // Return null if split not found or access denied
+      return null;
+    }
   },
 });
 
@@ -102,6 +107,113 @@ export const addExercisesToSplit = mutation({
       exercises: exerciseIds,
       updatedAt: Date.now(),
     });
+
+    return split._id;
+  },
+});
+
+export const updateSplit = mutation({
+  args: {
+    splitId: v.id("splits"),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const split = await _assertAccess(ctx, args.splitId);
+
+    if (args.name !== undefined) {
+      if (args.name.length < 3 || args.name.length > 50) {
+        throw new Error("Name must be between 3 and 50 characters");
+      }
+    }
+
+    if (args.description !== undefined && args.description.length > 500) {
+      throw new Error("Description must be less than 500 characters");
+    }
+
+    const updateData: {
+      name?: string;
+      description?: string;
+      updatedAt: number;
+    } = {
+      updatedAt: Date.now(),
+    };
+
+    if (args.name !== undefined) {
+      updateData.name = args.name;
+    }
+
+    if (args.description !== undefined) {
+      updateData.description = args.description;
+    }
+
+    await ctx.db.patch(split._id, updateData);
+
+    return split._id;
+  },
+});
+
+export const removeExerciseFromSplit = mutation({
+  args: {
+    splitId: v.id("splits"),
+    exerciseId: v.id("exercises"),
+  },
+  handler: async (ctx, args) => {
+    const split = await _assertAccess(ctx, args.splitId);
+
+    const exerciseIds = split.exercises.filter((id) => id !== args.exerciseId);
+
+    await ctx.db.patch(split._id, {
+      exercises: exerciseIds,
+      updatedAt: Date.now(),
+    });
+
+    return split._id;
+  },
+});
+
+export const reorderSplitExercises = mutation({
+  args: {
+    splitId: v.id("splits"),
+    exerciseIds: v.array(v.id("exercises")),
+  },
+  handler: async (ctx, args) => {
+    const split = await _assertAccess(ctx, args.splitId);
+
+    // Verify that the new exercise IDs match the existing ones (same set, just reordered)
+    const existingIds = new Set(split.exercises);
+    const newIds = new Set(args.exerciseIds);
+
+    if (
+      existingIds.size !== newIds.size ||
+      newIds.size !== args.exerciseIds.length
+    ) {
+      throw new Error("Exercise count mismatch");
+    }
+
+    for (const id of args.exerciseIds) {
+      if (!existingIds.has(id)) {
+        throw new Error("Invalid exercise ID in reorder");
+      }
+    }
+
+    await ctx.db.patch(split._id, {
+      exercises: args.exerciseIds,
+      updatedAt: Date.now(),
+    });
+
+    return split._id;
+  },
+});
+
+export const deleteSplit = mutation({
+  args: {
+    splitId: v.id("splits"),
+  },
+  handler: async (ctx, args) => {
+    const split = await _assertAccess(ctx, args.splitId);
+
+    await ctx.db.delete(split._id);
 
     return split._id;
   },

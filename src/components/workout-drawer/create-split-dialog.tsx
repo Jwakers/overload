@@ -46,7 +46,7 @@ const createSplitSchema = z.object({
 type CreateSplitFormData = z.infer<typeof createSplitSchema>;
 
 type CreateSplitDialogProps = {
-  onCreate: (splitId: Id<"splits">) => void;
+  onCreate?: (splitId: Id<"splits">) => void;
   trigger?: React.ReactNode;
   className?: string;
 };
@@ -77,7 +77,7 @@ export function CreateSplitDialog({
       {
         loading: "Creating split...",
         success: (splitId) => {
-          onCreate(splitId);
+          onCreate?.(splitId);
           form.reset();
           setOpen(false);
           return "Split created successfully!";
