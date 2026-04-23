@@ -30,10 +30,10 @@ export default function SettingsPage() {
       setWeight(user.bodyWeight.toString());
       setWeightUnit(user.bodyWeightUnit || "lbs");
     }
-    if (user) {
+    if (user && !isEditingRestTime && !isUpdatingRestTime) {
       setDefaultRestTime(String(user.preferences?.defaultRestTime ?? 90));
     }
-  }, [user]);
+  }, [user, isEditingRestTime, isUpdatingRestTime]);
 
   const handleWeightUpdate = async () => {
     if (!user || weight.trim() === "") return;
@@ -79,10 +79,12 @@ export default function SettingsPage() {
       }),
       {
         loading: "Updating default rest time…",
-        success: () => "Default rest timer updated",
+        success: () => {
+          setIsEditingRestTime(false);
+          return "Default rest timer updated";
+        },
         error: "Failed to update default rest timer",
         finally: () => {
-          setIsEditingRestTime(false);
           setIsUpdatingRestTime(false);
         },
       }

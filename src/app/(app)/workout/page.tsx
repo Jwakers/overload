@@ -94,6 +94,9 @@ const getDefaultRestSecondsFromUser = (
   user: FunctionReturnType<typeof api.users.current> | undefined
 ) => clampTargetSeconds(user?.preferences?.defaultRestTime ?? DEFAULT_REST_SECONDS);
 
+const getActiveRestTimerStorageKey = (workoutSessionId: Id<"workoutSessions">) =>
+  `${ACTIVE_REST_TIMER_STORAGE_KEY}:${workoutSessionId}`;
+
 const getElapsedMs = (timer: RestTimerState, nowMs: number) => {
   if (!timer.startedAtMs) return 0;
   const endMs = timer.isRunning ? nowMs : (timer.pausedAtMs ?? nowMs);
@@ -314,7 +317,7 @@ export default function WorkoutPage() {
     createDefaultRestTimerState
   );
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const hasLoadedTimerState = useRef(false);
+  const hydratedTimerSessionIdRef = useRef<Id<"workoutSessions"> | null>(null);
 
   useEffect(() => {
     if (!workoutSessionId) return;
@@ -323,11 +326,12 @@ export default function WorkoutPage() {
   }, [workoutSessionId]);
 
   useEffect(() => {
-    if (user === undefined || hasLoadedTimerState.current) return;
-    hasLoadedTimerState.current = true;
+    if (user === undefined || !workoutSessionId) return;
+    if (hydratedTimerSessionIdRef.current === workoutSessionId) return;
+    hydratedTimerSessionIdRef.current = workoutSessionId;
     globalThis.localStorage?.removeItem("workout.restTimer.defaultSeconds");
     const storedTimer = globalThis.localStorage?.getItem(
-      ACTIVE_REST_TIMER_STORAGE_KEY
+      getActiveRestTimerStorageKey(workoutSessionId)
     );
 
     let nextTimer = createDefaultRestTimerState();
@@ -365,7 +369,7 @@ export default function WorkoutPage() {
     }
 
     setRestTimer(nextTimer);
-  }, [user]);
+  }, [user, workoutSessionId]);
 
   useEffect(() => {
     if (user === undefined) return;
@@ -427,15 +431,19 @@ export default function WorkoutPage() {
   }, []);
 
   useEffect(() => {
+    if (user === undefined || !workoutSessionId) return;
+    if (hydratedTimerSessionIdRef.current !== workoutSessionId) return;
+
+    const storageKey = getActiveRestTimerStorageKey(workoutSessionId);
     if (!restTimer.isVisible || !restTimer.startedAtMs) {
-      globalThis.localStorage?.removeItem(ACTIVE_REST_TIMER_STORAGE_KEY);
+      globalThis.localStorage?.removeItem(storageKey);
       return;
     }
     globalThis.localStorage?.setItem(
-      ACTIVE_REST_TIMER_STORAGE_KEY,
+      storageKey,
       JSON.stringify(restTimer)
     );
-  }, [restTimer]);
+  }, [restTimer, user, workoutSessionId]);
 
   const elapsedMs = getElapsedMs(restTimer, nowMs);
   const targetMs = restTimer.targetSeconds * 1000;

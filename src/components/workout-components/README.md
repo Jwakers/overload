@@ -46,11 +46,11 @@ This directory contains reusable workout UI components for the workout and split
 Import components individually or use the index file:
 
 ```tsx
-// Individual imports (deep paths)
-import { WeightUnitToggle } from "./workout-components/weight-unit-toggle";
+// Individual imports (deep path from this directory)
+import { WeightUnitToggle } from "./weight-unit-toggle";
 
-// Or use the barrel (index.ts) in this directory
-import { WeightUnitToggle } from "./workout-components";
+// Or use the barrel (index.ts) from app code
+import { WeightUnitToggle } from "@/components/workout-components";
 ```
 
 ## Benefits of Refactoring
