@@ -30,6 +30,10 @@ export default function SettingsPage() {
       setWeight(user.bodyWeight.toString());
       setWeightUnit(user.bodyWeightUnit || "lbs");
     }
+  }, [user]);
+
+  // Keep rest timer input in sync unless user is editing/saving it.
+  useEffect(() => {
     if (user && !isEditingRestTime && !isUpdatingRestTime) {
       setDefaultRestTime(String(user.preferences?.defaultRestTime ?? 90));
     }

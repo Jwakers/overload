@@ -326,7 +326,7 @@ export default function WorkoutPage() {
   }, [workoutSessionId]);
 
   useEffect(() => {
-    if (user === undefined || !workoutSessionId) return;
+    if (!workoutSessionId) return;
     if (hydratedTimerSessionIdRef.current === workoutSessionId) return;
     hydratedTimerSessionIdRef.current = workoutSessionId;
     globalThis.localStorage?.removeItem("workout.restTimer.defaultSeconds");
@@ -335,17 +335,23 @@ export default function WorkoutPage() {
     );
 
     let nextTimer = createDefaultRestTimerState();
-    nextTimer.targetSeconds = getDefaultRestSecondsFromUser(user);
+    if (user !== undefined) {
+      nextTimer.targetSeconds = getDefaultRestSecondsFromUser(user);
+    }
 
     if (storedTimer) {
       try {
         const parsed = JSON.parse(storedTimer) as Partial<RestTimerState>;
         if (parsed.startedAtMs) {
+          const fallbackTargetSeconds =
+            user !== undefined
+              ? getDefaultRestSecondsFromUser(user)
+              : DEFAULT_REST_SECONDS;
           nextTimer = {
             ...nextTimer,
             ...parsed,
             targetSeconds: clampTargetSeconds(
-              parsed.targetSeconds ?? getDefaultRestSecondsFromUser(user)
+              parsed.targetSeconds ?? fallbackTargetSeconds
             ),
           };
         }
@@ -364,7 +370,10 @@ export default function WorkoutPage() {
         ...nextTimer,
         isRunning: false,
         isComplete: true,
-        pausedAtMs: nextTimer.startedAtMs + elapsedMs,
+        pausedAtMs:
+          nextTimer.startedAtMs +
+          nextTimer.accumulatedPausedMs +
+          nextTimer.targetSeconds * 1000,
       };
     }
 
