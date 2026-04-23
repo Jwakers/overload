@@ -380,9 +380,10 @@ function SetForm({
 
 type ExerciseSetFormProps = {
   exerciseSetId: Id<"exerciseSets">;
+  onSetSaved?: () => void;
 };
 
-export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
+export function ExerciseSetForm({ exerciseSetId, onSetSaved }: ExerciseSetFormProps) {
   // TODO: When weight unit changes, convert the current weight value to the new unit
   const user = useQuery(api.users.current);
   const exerciseSet = useQuery(api.exerciseSets.get, {
@@ -526,6 +527,7 @@ export function ExerciseSetForm({ exerciseSetId }: ExerciseSetFormProps) {
           setShowNotes(false);
           // Reset initialization flag so next set can be preset with this set's weight
           hasInitialized.current = false;
+          onSetSaved?.();
           return "Set saved";
         },
         error: () => {

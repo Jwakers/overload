@@ -1,4 +1,4 @@
-import { CreateSplitDialog } from "@/components/workout-drawer/create-split-dialog";
+import { CreateSplitDialog } from "@/components/workout-components/create-split-dialog";
 import { Metadata } from "next";
 import SplitGrid from "./_components/split-grid";
 

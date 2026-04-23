@@ -15,10 +15,14 @@ import { toast } from "sonner";
 export default function SettingsPage() {
   const user = useQuery(api.users.current);
   const updateBodyWeight = useMutation(api.users.updateBodyWeight);
+  const updatePreferences = useMutation(api.users.updatePreferences);
   const [isUpdatingWeight, setIsUpdatingWeight] = useState(false);
   const [isEditingWeight, setIsEditingWeight] = useState(false);
+  const [isEditingRestTime, setIsEditingRestTime] = useState(false);
+  const [isUpdatingRestTime, setIsUpdatingRestTime] = useState(false);
   const [weight, setWeight] = useState("");
   const [weightUnit, setWeightUnit] = useState<"lbs" | "kg">("lbs");
+  const [defaultRestTime, setDefaultRestTime] = useState("90");
 
   // Initialize weight from user data
   useEffect(() => {
@@ -27,6 +31,13 @@ export default function SettingsPage() {
       setWeightUnit(user.bodyWeightUnit || "lbs");
     }
   }, [user]);
+
+  // Keep rest timer input in sync unless user is editing/saving it.
+  useEffect(() => {
+    if (user && !isEditingRestTime && !isUpdatingRestTime) {
+      setDefaultRestTime(String(user.preferences?.defaultRestTime ?? 90));
+    }
+  }, [user, isEditingRestTime, isUpdatingRestTime]);
 
   const handleWeightUpdate = async () => {
     if (!user || weight.trim() === "") return;
@@ -49,6 +60,36 @@ export default function SettingsPage() {
         finally: () => {
           setIsEditingWeight(false);
           setIsUpdatingWeight(false);
+        },
+      }
+    );
+  };
+
+  const handleRestTimeUpdate = async () => {
+    if (!user || defaultRestTime.trim() === "") return;
+    const parsed = Number(defaultRestTime);
+    if (!Number.isFinite(parsed) || parsed < 10 || parsed > 600) {
+      toast.error("Default rest time must be between 10 and 600 seconds");
+      return;
+    }
+
+    setIsUpdatingRestTime(true);
+    toast.promise(
+      updatePreferences({
+        preferences: {
+          defaultWeightUnit: user.preferences?.defaultWeightUnit ?? "lbs",
+          defaultRestTime: Math.round(parsed),
+        },
+      }),
+      {
+        loading: "Updating default rest time…",
+        success: () => {
+          setIsEditingRestTime(false);
+          return "Default rest timer updated";
+        },
+        error: "Failed to update default rest timer",
+        finally: () => {
+          setIsUpdatingRestTime(false);
         },
       }
     );
@@ -197,9 +238,58 @@ export default function SettingsPage() {
                     <span className="text-sm text-foreground">
                       Default Rest Time
                     </span>
-                    <Badge variant="secondary">
-                      {user.preferences?.defaultRestTime ?? 60}s
-                    </Badge>
+                    {isEditingRestTime ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          value={defaultRestTime}
+                          onChange={(e) => setDefaultRestTime(e.target.value)}
+                          min={10}
+                          max={600}
+                          step={5}
+                          inputMode="numeric"
+                          className="w-20 h-8"
+                          disabled={isUpdatingRestTime}
+                          aria-label="Default rest time in seconds"
+                        />
+                        <Button
+                          onClick={handleRestTimeUpdate}
+                          disabled={isUpdatingRestTime}
+                          size="sm"
+                          className="bg-success hover:bg-success/90"
+                          aria-label="Save default rest time"
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setIsEditingRestTime(false);
+                            setDefaultRestTime(
+                              String(user.preferences?.defaultRestTime ?? 90)
+                            );
+                          }}
+                          disabled={isUpdatingRestTime}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">
+                          {user.preferences?.defaultRestTime ?? 90}s
+                        </Badge>
+                        <Button
+                          onClick={() => setIsEditingRestTime(true)}
+                          variant="outline"
+                          size="sm"
+                          aria-label="Edit default rest time"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center justify-between p-3 bg-muted/50 border border-border rounded-md">
                     <span className="text-sm text-foreground">

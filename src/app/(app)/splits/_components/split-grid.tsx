@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CreateSplitDialog } from "@/components/workout-drawer/create-split-dialog";
+import { CreateSplitDialog } from "@/components/workout-components/create-split-dialog";
 import { ROUTES } from "@/constants";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";

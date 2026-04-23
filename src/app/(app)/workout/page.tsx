@@ -28,11 +28,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { ExerciseSetForm } from "@/components/workout-drawer/exercise-set-form";
-import { SelectExerciseDrawer } from "@/components/workout-drawer/select-exercise-drawer";
-import { SplitSelectionGrid } from "@/components/workout-drawer/split-selection-grid";
-import { WeightUnitToggle } from "@/components/workout-drawer/weight-unit-toggle";
-import { WorkoutActionsMenu } from "@/components/workout-drawer/workout-actions-menu";
+import { ExerciseSetForm } from "@/components/workout-components/exercise-set-form";
+import { SelectExerciseDrawer } from "@/components/workout-components/select-exercise-drawer";
+import { SplitSelectionGrid } from "@/components/workout-components/split-selection-grid";
+import { WeightUnitToggle } from "@/components/workout-components/weight-unit-toggle";
+import { WorkoutActionsMenu } from "@/components/workout-components/workout-actions-menu";
 import { MAX_EXERCISES_TO_SHOW, ROUTES } from "@/constants";
 import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
@@ -46,16 +46,73 @@ import {
   Dumbbell,
   DumbbellIcon,
   MoreHorizontal,
+  Pause,
   Pencil,
+  Play,
   Plus,
   Save,
   Trash2,
+  X,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+
+const DEFAULT_REST_SECONDS = 90;
+const ACTIVE_REST_TIMER_STORAGE_KEY = "workout.restTimer.active";
+
+type RestTimerState = {
+  isVisible: boolean;
+  isRunning: boolean;
+  isComplete: boolean;
+  startedAtMs: number | null;
+  pausedAtMs: number | null;
+  accumulatedPausedMs: number;
+  targetSeconds: number;
+  lastExerciseName?: string;
+};
+
+const createDefaultRestTimerState = (): RestTimerState => ({
+  isVisible: false,
+  isRunning: false,
+  isComplete: false,
+  startedAtMs: null,
+  pausedAtMs: null,
+  accumulatedPausedMs: 0,
+  targetSeconds: DEFAULT_REST_SECONDS,
+});
+
+const clampTargetSeconds = (value: number) => {
+  if (!Number.isFinite(value)) return DEFAULT_REST_SECONDS;
+  return Math.min(600, Math.max(10, Math.round(value)));
+};
+
+const getDefaultRestSecondsFromUser = (
+  user: FunctionReturnType<typeof api.users.current> | undefined,
+) =>
+  clampTargetSeconds(
+    user?.preferences?.defaultRestTime ?? DEFAULT_REST_SECONDS,
+  );
+
+const getActiveRestTimerStorageKey = (
+  workoutSessionId: Id<"workoutSessions">,
+) => `${ACTIVE_REST_TIMER_STORAGE_KEY}:${workoutSessionId}`;
+
+const getElapsedMs = (timer: RestTimerState, nowMs: number) => {
+  if (!timer.startedAtMs) return 0;
+  const endMs = timer.isRunning ? nowMs : (timer.pausedAtMs ?? nowMs);
+  return Math.max(0, endMs - timer.startedAtMs - timer.accumulatedPausedMs);
+};
+
+const formatDuration = (milliseconds: number) => {
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
 
 // Inactive Exercise Set Card Component
 type InactiveExerciseSetCardProps = {
@@ -218,10 +275,10 @@ export default function WorkoutPage() {
     useState<Id<"workoutSessions"> | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const getOrCreateSessionMutation = useMutation(
-    api.workoutSessions.getOrCreate
+    api.workoutSessions.getOrCreate,
   );
   const deleteWorkoutSession = useMutation(
-    api.workoutSessions.deleteWorkoutSession
+    api.workoutSessions.deleteWorkoutSession,
   );
   const createExerciseSet = useMutation(api.exerciseSets.create);
   const deleteExerciseSet = useMutation(api.exerciseSets.deleteExerciseSet);
@@ -234,7 +291,7 @@ export default function WorkoutPage() {
       ? {
           workoutSessionId,
         }
-      : "skip"
+      : "skip",
   );
   const workoutSession = useQuery(
     api.workoutSessions.getById,
@@ -242,7 +299,7 @@ export default function WorkoutPage() {
       ? {
           id: workoutSessionId,
         }
-      : "skip"
+      : "skip",
   );
   const split = useQuery(
     api.splits.getSplitById,
@@ -250,8 +307,9 @@ export default function WorkoutPage() {
       ? {
           id: workoutSession.splitId,
         }
-      : "skip"
+      : "skip",
   );
+  const user = useQuery(api.users.current);
 
   const [selectExerciseDialogOpen, setSelectExerciseDialogOpen] =
     useState(false);
@@ -259,12 +317,85 @@ export default function WorkoutPage() {
   const [savedExerciseSets, setSavedExerciseSets] = useState<
     Set<Id<"exerciseSets">>
   >(new Set());
+  const [restTimer, setRestTimer] = useState<RestTimerState>(
+    createDefaultRestTimerState,
+  );
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const hydratedTimerSessionIdRef = useRef<Id<"workoutSessions"> | null>(null);
 
   useEffect(() => {
     if (!workoutSessionId) return;
 
     setSavedExerciseSets(new Set());
   }, [workoutSessionId]);
+
+  useEffect(() => {
+    if (!workoutSessionId) return;
+    if (hydratedTimerSessionIdRef.current === workoutSessionId) return;
+    hydratedTimerSessionIdRef.current = workoutSessionId;
+    globalThis.localStorage?.removeItem("workout.restTimer.defaultSeconds");
+    const storedTimer = globalThis.localStorage?.getItem(
+      getActiveRestTimerStorageKey(workoutSessionId),
+    );
+
+    let nextTimer = createDefaultRestTimerState();
+    if (user !== undefined) {
+      nextTimer.targetSeconds = getDefaultRestSecondsFromUser(user);
+    }
+
+    if (storedTimer) {
+      try {
+        const parsed = JSON.parse(storedTimer) as Partial<RestTimerState>;
+        if (typeof parsed.startedAtMs === "number" && parsed.startedAtMs > 0) {
+          const fallbackTargetSeconds =
+            user !== undefined
+              ? getDefaultRestSecondsFromUser(user)
+              : DEFAULT_REST_SECONDS;
+          nextTimer = {
+            ...nextTimer,
+            ...parsed,
+            targetSeconds: clampTargetSeconds(
+              parsed.targetSeconds ?? fallbackTargetSeconds,
+            ),
+          };
+        }
+      } catch {
+        // Ignore invalid localStorage JSON.
+      }
+    }
+
+    const elapsedMs = getElapsedMs(nextTimer, Date.now());
+    if (
+      nextTimer.isRunning &&
+      elapsedMs >= nextTimer.targetSeconds * 1000 &&
+      nextTimer.startedAtMs
+    ) {
+      nextTimer = {
+        ...nextTimer,
+        isRunning: false,
+        isComplete: true,
+        pausedAtMs:
+          nextTimer.startedAtMs +
+          nextTimer.accumulatedPausedMs +
+          nextTimer.targetSeconds * 1000,
+      };
+    }
+
+    setRestTimer(nextTimer);
+  }, [user, workoutSessionId]);
+
+  useEffect(() => {
+    if (user === undefined) return;
+    const userDefault = getDefaultRestSecondsFromUser(user);
+    setRestTimer((current) => {
+      if (current.isVisible && current.startedAtMs) return current;
+      if (current.targetSeconds === userDefault) return current;
+      return {
+        ...current,
+        targetSeconds: userDefault,
+      };
+    });
+  }, [user]);
 
   useEffect(() => {
     if (workoutSessionId) return;
@@ -292,6 +423,56 @@ export default function WorkoutPage() {
     scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
   }, [exerciseSets?.length]);
 
+  useEffect(() => {
+    if (!restTimer.isVisible || !restTimer.isRunning) return;
+
+    const intervalId = globalThis.setInterval(() => {
+      setNowMs(Date.now());
+    }, 250);
+
+    return () => globalThis.clearInterval(intervalId);
+  }, [restTimer.isRunning, restTimer.isVisible]);
+
+  useEffect(() => {
+    const syncNow = () => setNowMs(Date.now());
+    globalThis.addEventListener("focus", syncNow);
+    document.addEventListener("visibilitychange", syncNow);
+    return () => {
+      globalThis.removeEventListener("focus", syncNow);
+      document.removeEventListener("visibilitychange", syncNow);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (user === undefined || !workoutSessionId) return;
+    if (hydratedTimerSessionIdRef.current !== workoutSessionId) return;
+
+    const storageKey = getActiveRestTimerStorageKey(workoutSessionId);
+    if (!restTimer.isVisible || !restTimer.startedAtMs) {
+      globalThis.localStorage?.removeItem(storageKey);
+      return;
+    }
+    globalThis.localStorage?.setItem(storageKey, JSON.stringify(restTimer));
+  }, [restTimer, user, workoutSessionId]);
+
+  const elapsedMs = getElapsedMs(restTimer, nowMs);
+  const targetMs = restTimer.targetSeconds * 1000;
+
+  useEffect(() => {
+    if (!restTimer.isRunning || !restTimer.startedAtMs) return;
+    if (elapsedMs < targetMs) return;
+    setRestTimer((current) => {
+      if (!current.startedAtMs || !current.isRunning) return current;
+      return {
+        ...current,
+        isRunning: false,
+        isComplete: true,
+        pausedAtMs:
+          current.startedAtMs + targetMs + current.accumulatedPausedMs,
+      };
+    });
+  }, [elapsedMs, restTimer.isRunning, restTimer.startedAtMs, targetMs]);
+
   // Track which exercise sets have been saved previously
   useEffect(() => {
     if (!exerciseSets) return;
@@ -301,12 +482,12 @@ export default function WorkoutPage() {
       .map((es) => es._id);
 
     setSavedExerciseSets(
-      (previous) => new Set([...allInactiveIds, ...previous])
+      (previous) => new Set([...allInactiveIds, ...previous]),
     );
   }, [exerciseSets]);
 
   const handleAddExerciseToSplit = (
-    exerciseId: Id<"exercises"> | undefined
+    exerciseId: Id<"exercises"> | undefined,
   ) => {
     if (!split || !exerciseId) return;
     setIsPending(true);
@@ -320,7 +501,7 @@ export default function WorkoutPage() {
         success: () => `Exercise added to ${split.name}`,
         error: "Failed to add exercise to split. Please try again.",
         finally: () => setIsPending(false),
-      }
+      },
     );
   };
 
@@ -340,7 +521,7 @@ export default function WorkoutPage() {
         },
         error: "Failed to add exercise. Please try again.",
         finally: () => setIsPending(false),
-      }
+      },
     );
   };
 
@@ -399,6 +580,57 @@ export default function WorkoutPage() {
     });
   };
 
+  const handleSetSaved = (exerciseName?: string) => {
+    const startedAtMs = Date.now();
+    setNowMs(startedAtMs);
+    setRestTimer((current) => ({
+      ...current,
+      isVisible: true,
+      isRunning: true,
+      isComplete: false,
+      startedAtMs,
+      pausedAtMs: null,
+      accumulatedPausedMs: 0,
+      targetSeconds: getDefaultRestSecondsFromUser(user),
+      lastExerciseName: exerciseName,
+    }));
+  };
+
+  const handleToggleTimer = () => {
+    const now = Date.now();
+    setNowMs(now);
+    setRestTimer((current) => {
+      if (!current.startedAtMs || current.isComplete) return current;
+      if (current.isRunning) {
+        return {
+          ...current,
+          isRunning: false,
+          pausedAtMs: now,
+        };
+      }
+      const pauseDuration = current.pausedAtMs ? now - current.pausedAtMs : 0;
+      return {
+        ...current,
+        isRunning: true,
+        pausedAtMs: null,
+        accumulatedPausedMs: current.accumulatedPausedMs + pauseDuration,
+      };
+    });
+  };
+
+  const handleDismissTimer = () => {
+    setRestTimer((current) => ({
+      ...current,
+      isVisible: false,
+      isRunning: false,
+      isComplete: false,
+      startedAtMs: null,
+      pausedAtMs: null,
+      accumulatedPausedMs: 0,
+      lastExerciseName: undefined,
+    }));
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -448,14 +680,14 @@ export default function WorkoutPage() {
               const renderSplitPrompt =
                 split &&
                 !split?.exercises.some(
-                  (ex) => ex._id === exerciseSet.exercise?._id
+                  (ex) => ex._id === exerciseSet.exercise?._id,
                 );
 
               return (
                 <div
                   className={cn(
                     "border p-4 space-y-4 rounded",
-                    !exerciseSet.isActive && "bg-muted text-muted-foreground"
+                    !exerciseSet.isActive && "bg-muted text-muted-foreground",
                   )}
                   key={exerciseSet._id}
                 >
@@ -508,7 +740,12 @@ export default function WorkoutPage() {
                     ) : null}
                   </div>
                   {exerciseSet.isActive ? (
-                    <ExerciseSetForm exerciseSetId={exerciseSet._id} />
+                    <ExerciseSetForm
+                      exerciseSetId={exerciseSet._id}
+                      onSetSaved={() =>
+                        handleSetSaved(exerciseSet.exercise?.name)
+                      }
+                    />
                   ) : (
                     <InactiveExerciseSetCard
                       exerciseSet={exerciseSet}
@@ -538,6 +775,77 @@ export default function WorkoutPage() {
       </div>
 
       {/* Footer Actions */}
+      {restTimer.isVisible ? (
+        <div className="fixed inset-x-0 z-20 bottom-[calc(var(--nav-height,_81px)+84px)]">
+          <div className="container px-4">
+            <div
+              className={cn(
+                "rounded-lg border bg-background/95 backdrop-blur p-3 shadow-lg",
+                restTimer.isComplete && "border-green-500/50",
+              )}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p
+                    className={cn(
+                      "text-sm font-semibold",
+                      restTimer.isComplete && "text-green-600",
+                    )}
+                  >
+                    {restTimer.isComplete ? "Rest complete" : "Rest timer"}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {restTimer.lastExerciseName
+                      ? `${restTimer.lastExerciseName} • `
+                      : ""}
+                    Target {formatDuration(targetMs)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <Link
+                      href={ROUTES.SETTINGS}
+                      className="underline underline-offset-2 hover:text-foreground"
+                    >
+                      Update rest timer in Settings
+                    </Link>
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <p className="text-2xl sm:text-3xl font-bold tabular-nums tracking-tight">
+                    {formatDuration(elapsedMs)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleToggleTimer}
+                    disabled={restTimer.isComplete || !restTimer.startedAtMs}
+                    title={restTimer.isRunning ? "Pause timer" : "Resume timer"}
+                  >
+                    {restTimer.isRunning ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleDismissTimer}
+                    title="Dismiss timer"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="sticky bottom-[var(--nav-height,_81px)] inset-x-0 bg-background border-t z-10">
         <div className="container px-4 py-3">
           <div className="flex items-center justify-between gap-2">
@@ -555,7 +863,7 @@ export default function WorkoutPage() {
               type="button"
               className={cn(
                 "bg-brand text-brand-foreground flex items-center gap-2 px-4 py-3 rounded-full shadow-lg flex-1 max-w-50 justify-center",
-                !workoutSessionId && "opacity-50 cursor-not-allowed"
+                !workoutSessionId && "opacity-50 cursor-not-allowed",
               )}
               onClick={() => setSelectExerciseDialogOpen(true)}
               disabled={!workoutSessionId}
@@ -619,10 +927,10 @@ function SaveWorkoutDialog(props: {
             return "Workout saved";
           },
           error: "Failed to save workout. Please try again.",
-        }
+        },
       );
     },
-    [completeMutation, disabled, onComplete, workoutSessionId]
+    [completeMutation, disabled, onComplete, workoutSessionId],
   );
 
   return (
@@ -743,7 +1051,7 @@ function RecommendedExercises({
 
   // Filter out exercises that are already in the current workout
   const recommendedExercises = split.exercises.filter(
-    (exercise) => !currentExerciseIds.includes(exercise._id)
+    (exercise) => !currentExerciseIds.includes(exercise._id),
   );
 
   const excessExercises = recommendedExercises.length - showIndex;

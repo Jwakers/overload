@@ -25,7 +25,7 @@ export const upsertFromClerk = internalMutation({
       externalId: data.id,
       preferences: {
         defaultWeightUnit: "lbs",
-        defaultRestTime: 60,
+        defaultRestTime: 90,
         weightTrackingFrequency: "manual",
         ...(user?.preferences ?? {}),
       },
@@ -120,6 +120,15 @@ export const updatePreferences = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
+    if (args.preferences.defaultRestTime !== undefined) {
+      if (
+        !Number.isFinite(args.preferences.defaultRestTime) ||
+        args.preferences.defaultRestTime < 10 ||
+        args.preferences.defaultRestTime > 600
+      ) {
+        throw new Error("Default rest time must be between 10 and 600 seconds.");
+      }
+    }
     await ctx.db.patch(user._id, {
       preferences: {
         ...user.preferences,
