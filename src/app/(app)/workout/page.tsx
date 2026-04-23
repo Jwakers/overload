@@ -51,8 +51,8 @@ import {
   Play,
   Plus,
   Save,
-  X,
   Trash2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -91,11 +91,15 @@ const clampTargetSeconds = (value: number) => {
 };
 
 const getDefaultRestSecondsFromUser = (
-  user: FunctionReturnType<typeof api.users.current> | undefined
-) => clampTargetSeconds(user?.preferences?.defaultRestTime ?? DEFAULT_REST_SECONDS);
+  user: FunctionReturnType<typeof api.users.current> | undefined,
+) =>
+  clampTargetSeconds(
+    user?.preferences?.defaultRestTime ?? DEFAULT_REST_SECONDS,
+  );
 
-const getActiveRestTimerStorageKey = (workoutSessionId: Id<"workoutSessions">) =>
-  `${ACTIVE_REST_TIMER_STORAGE_KEY}:${workoutSessionId}`;
+const getActiveRestTimerStorageKey = (
+  workoutSessionId: Id<"workoutSessions">,
+) => `${ACTIVE_REST_TIMER_STORAGE_KEY}:${workoutSessionId}`;
 
 const getElapsedMs = (timer: RestTimerState, nowMs: number) => {
   if (!timer.startedAtMs) return 0;
@@ -271,10 +275,10 @@ export default function WorkoutPage() {
     useState<Id<"workoutSessions"> | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const getOrCreateSessionMutation = useMutation(
-    api.workoutSessions.getOrCreate
+    api.workoutSessions.getOrCreate,
   );
   const deleteWorkoutSession = useMutation(
-    api.workoutSessions.deleteWorkoutSession
+    api.workoutSessions.deleteWorkoutSession,
   );
   const createExerciseSet = useMutation(api.exerciseSets.create);
   const deleteExerciseSet = useMutation(api.exerciseSets.deleteExerciseSet);
@@ -287,7 +291,7 @@ export default function WorkoutPage() {
       ? {
           workoutSessionId,
         }
-      : "skip"
+      : "skip",
   );
   const workoutSession = useQuery(
     api.workoutSessions.getById,
@@ -295,7 +299,7 @@ export default function WorkoutPage() {
       ? {
           id: workoutSessionId,
         }
-      : "skip"
+      : "skip",
   );
   const split = useQuery(
     api.splits.getSplitById,
@@ -303,7 +307,7 @@ export default function WorkoutPage() {
       ? {
           id: workoutSession.splitId,
         }
-      : "skip"
+      : "skip",
   );
   const user = useQuery(api.users.current);
 
@@ -314,7 +318,7 @@ export default function WorkoutPage() {
     Set<Id<"exerciseSets">>
   >(new Set());
   const [restTimer, setRestTimer] = useState<RestTimerState>(
-    createDefaultRestTimerState
+    createDefaultRestTimerState,
   );
   const [nowMs, setNowMs] = useState(() => Date.now());
   const hydratedTimerSessionIdRef = useRef<Id<"workoutSessions"> | null>(null);
@@ -331,7 +335,7 @@ export default function WorkoutPage() {
     hydratedTimerSessionIdRef.current = workoutSessionId;
     globalThis.localStorage?.removeItem("workout.restTimer.defaultSeconds");
     const storedTimer = globalThis.localStorage?.getItem(
-      getActiveRestTimerStorageKey(workoutSessionId)
+      getActiveRestTimerStorageKey(workoutSessionId),
     );
 
     let nextTimer = createDefaultRestTimerState();
@@ -342,7 +346,7 @@ export default function WorkoutPage() {
     if (storedTimer) {
       try {
         const parsed = JSON.parse(storedTimer) as Partial<RestTimerState>;
-        if (parsed.startedAtMs) {
+        if (typeof parsed.startedAtMs === "number" && parsed.startedAtMs > 0) {
           const fallbackTargetSeconds =
             user !== undefined
               ? getDefaultRestSecondsFromUser(user)
@@ -351,7 +355,7 @@ export default function WorkoutPage() {
             ...nextTimer,
             ...parsed,
             targetSeconds: clampTargetSeconds(
-              parsed.targetSeconds ?? fallbackTargetSeconds
+              parsed.targetSeconds ?? fallbackTargetSeconds,
             ),
           };
         }
@@ -448,10 +452,7 @@ export default function WorkoutPage() {
       globalThis.localStorage?.removeItem(storageKey);
       return;
     }
-    globalThis.localStorage?.setItem(
-      storageKey,
-      JSON.stringify(restTimer)
-    );
+    globalThis.localStorage?.setItem(storageKey, JSON.stringify(restTimer));
   }, [restTimer, user, workoutSessionId]);
 
   const elapsedMs = getElapsedMs(restTimer, nowMs);
@@ -466,7 +467,8 @@ export default function WorkoutPage() {
         ...current,
         isRunning: false,
         isComplete: true,
-        pausedAtMs: current.startedAtMs + targetMs + current.accumulatedPausedMs,
+        pausedAtMs:
+          current.startedAtMs + targetMs + current.accumulatedPausedMs,
       };
     });
   }, [elapsedMs, restTimer.isRunning, restTimer.startedAtMs, targetMs]);
@@ -480,12 +482,12 @@ export default function WorkoutPage() {
       .map((es) => es._id);
 
     setSavedExerciseSets(
-      (previous) => new Set([...allInactiveIds, ...previous])
+      (previous) => new Set([...allInactiveIds, ...previous]),
     );
   }, [exerciseSets]);
 
   const handleAddExerciseToSplit = (
-    exerciseId: Id<"exercises"> | undefined
+    exerciseId: Id<"exercises"> | undefined,
   ) => {
     if (!split || !exerciseId) return;
     setIsPending(true);
@@ -499,7 +501,7 @@ export default function WorkoutPage() {
         success: () => `Exercise added to ${split.name}`,
         error: "Failed to add exercise to split. Please try again.",
         finally: () => setIsPending(false),
-      }
+      },
     );
   };
 
@@ -519,7 +521,7 @@ export default function WorkoutPage() {
         },
         error: "Failed to add exercise. Please try again.",
         finally: () => setIsPending(false),
-      }
+      },
     );
   };
 
@@ -678,14 +680,14 @@ export default function WorkoutPage() {
               const renderSplitPrompt =
                 split &&
                 !split?.exercises.some(
-                  (ex) => ex._id === exerciseSet.exercise?._id
+                  (ex) => ex._id === exerciseSet.exercise?._id,
                 );
 
               return (
                 <div
                   className={cn(
                     "border p-4 space-y-4 rounded",
-                    !exerciseSet.isActive && "bg-muted text-muted-foreground"
+                    !exerciseSet.isActive && "bg-muted text-muted-foreground",
                   )}
                   key={exerciseSet._id}
                 >
@@ -740,7 +742,9 @@ export default function WorkoutPage() {
                   {exerciseSet.isActive ? (
                     <ExerciseSetForm
                       exerciseSetId={exerciseSet._id}
-                      onSetSaved={() => handleSetSaved(exerciseSet.exercise?.name)}
+                      onSetSaved={() =>
+                        handleSetSaved(exerciseSet.exercise?.name)
+                      }
                     />
                   ) : (
                     <InactiveExerciseSetCard
@@ -777,7 +781,7 @@ export default function WorkoutPage() {
             <div
               className={cn(
                 "rounded-lg border bg-background/95 backdrop-blur p-3 shadow-lg",
-                restTimer.isComplete && "border-green-500/50"
+                restTimer.isComplete && "border-green-500/50",
               )}
             >
               <div className="flex items-center justify-between gap-3">
@@ -785,7 +789,7 @@ export default function WorkoutPage() {
                   <p
                     className={cn(
                       "text-sm font-semibold",
-                      restTimer.isComplete && "text-green-600"
+                      restTimer.isComplete && "text-green-600",
                     )}
                   >
                     {restTimer.isComplete ? "Rest complete" : "Rest timer"}
@@ -859,7 +863,7 @@ export default function WorkoutPage() {
               type="button"
               className={cn(
                 "bg-brand text-brand-foreground flex items-center gap-2 px-4 py-3 rounded-full shadow-lg flex-1 max-w-50 justify-center",
-                !workoutSessionId && "opacity-50 cursor-not-allowed"
+                !workoutSessionId && "opacity-50 cursor-not-allowed",
               )}
               onClick={() => setSelectExerciseDialogOpen(true)}
               disabled={!workoutSessionId}
@@ -923,10 +927,10 @@ function SaveWorkoutDialog(props: {
             return "Workout saved";
           },
           error: "Failed to save workout. Please try again.",
-        }
+        },
       );
     },
-    [completeMutation, disabled, onComplete, workoutSessionId]
+    [completeMutation, disabled, onComplete, workoutSessionId],
   );
 
   return (
@@ -1047,7 +1051,7 @@ function RecommendedExercises({
 
   // Filter out exercises that are already in the current workout
   const recommendedExercises = split.exercises.filter(
-    (exercise) => !currentExerciseIds.includes(exercise._id)
+    (exercise) => !currentExerciseIds.includes(exercise._id),
   );
 
   const excessExercises = recommendedExercises.length - showIndex;
