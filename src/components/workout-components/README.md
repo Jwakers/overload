@@ -1,17 +1,8 @@
-# Workout Drawer Components
+# Workout Components
 
-This directory contains the refactored workout drawer components that were previously all contained in a single `workout-drawer.tsx` file.
+This directory contains reusable workout UI components for the workout and split pages.
 
 ## Components
-
-### `WorkoutDrawer` (main component)
-
-- **File**: `workout-drawer.tsx`
-- **Purpose**: Main workout drawer component that orchestrates the workout logging experience
-- **Features**:
-  - Creates workout sessions
-  - Manages exercise sets
-  - Handles workout saving and deletion
 
 ### `WeightUnitToggle`
 
@@ -56,11 +47,10 @@ Import components individually or use the index file:
 
 ```tsx
 // Individual imports (deep paths)
-import { WorkoutDrawer } from "./workout-drawer/workout-drawer";
-import { WeightUnitToggle } from "./workout-drawer/weight-unit-toggle";
+import { WeightUnitToggle } from "./workout-components/weight-unit-toggle";
 
 // Or use the barrel (index.ts) in this directory
-import { WorkoutDrawer, WeightUnitToggle } from "./workout-drawer";
+import { WeightUnitToggle } from "./workout-components";
 ```
 
 ## Benefits of Refactoring

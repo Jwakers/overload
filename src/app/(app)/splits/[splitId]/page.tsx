@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { SelectExerciseDrawer } from "@/components/workout-drawer/select-exercise-drawer";
+import { SelectExerciseDrawer } from "@/components/workout-components/select-exercise-drawer";
 import { ROUTES } from "@/constants";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";

@@ -7,4 +7,3 @@ export { SplitSelectionGrid } from "./split-selection-grid";
 export { SplitSelectionModal } from "./split-selection-modal";
 export { WeightUnitToggle } from "./weight-unit-toggle";
 export { WorkoutActionsMenu } from "./workout-actions-menu";
-export { WorkoutDrawer } from "./workout-drawer";
